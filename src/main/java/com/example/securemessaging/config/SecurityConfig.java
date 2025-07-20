@@ -1,6 +1,7 @@
 package com.example.securemessaging.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,19 +16,29 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@ConfigurationProperties(prefix = "app.security.cors")
 public class SecurityConfig {
 
-    @Value("${app.security.cors.allowed-origins}")
     private List<String> allowedOrigins;
-
-    @Value("${app.security.cors.allowed-methods}")
     private List<String> allowedMethods;
-
-    @Value("${app.security.cors.allowed-headers}")
     private String allowedHeaders;
-
-    @Value("${app.security.cors.allow-credentials}")
     private boolean allowCredentials;
+
+    public void setAllowedOrigins(List<String> allowedOrigins) {
+        this.allowedOrigins = allowedOrigins;
+    }
+
+    public void setAllowedMethods(List<String> allowedMethods) {
+        this.allowedMethods = allowedMethods;
+    }
+
+    public void setAllowedHeaders(String allowedHeaders) {
+        this.allowedHeaders = allowedHeaders;
+    }
+
+    public void setAllowCredentials(boolean allowCredentials) {
+        this.allowCredentials = allowCredentials;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
