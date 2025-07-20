@@ -105,7 +105,6 @@ struct ComposeView: View {
                     shareableLink = link
                     isEncrypting = false
                     messageText = ""
-                    CryptoManager.securelyErase(&messageText)
                 }
             } catch {
                 await MainActor.run {

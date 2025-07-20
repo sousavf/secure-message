@@ -47,11 +47,10 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/api/messages/**").permitAll()
-                .requestMatchers("/api/stats/**").permitAll()
+                .requestMatchers("/messages/**").permitAll()
+                .requestMatchers("/stats/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/actuator/info").permitAll()
-                .anyRequest().authenticated()
             );
 
         return http.build();
