@@ -4,7 +4,7 @@ import CryptoKit
 class LinkManager {
     private let baseURL: String
     
-    init(baseURL: String = "https://yourdomain.com") {
+    init(baseURL: String = "https://whisper.stratholme.eu/api") {
         self.baseURL = baseURL
     }
     
