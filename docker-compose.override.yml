@@ -1,0 +1,51 @@
+# Development overrides for docker-compose.yml
+# This file is automatically merged with docker-compose.yml when running docker-compose up
+
+version: '3.8'
+
+services:
+  postgres:
+    # Enable logging for development
+    environment:
+      POSTGRES_PASSWORD: secure_password
+    # Expose PostgreSQL logs for debugging
+    command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
+
+  backend:
+    # Development environment variables
+    environment:
+      # Enable detailed logging for development
+      LOGGING_LEVEL_COM_EXAMPLE_SECUREMESSAGING: DEBUG
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: DEBUG
+      
+      # Show SQL statements in development
+      SPRING_JPA_SHOW_SQL: true
+      
+      # Enable Spring Boot DevTools
+      SPRING_DEVTOOLS_RESTART_ENABLED: true
+      
+      # JPA settings for development
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+      
+      # CORS for local development
+      APP_SECURITY_CORS_ALLOWED_ORIGINS_0: http://localhost:3000
+      APP_SECURITY_CORS_ALLOWED_ORIGINS_1: http://localhost:8080
+      APP_SECURITY_CORS_ALLOWED_ORIGINS_2: http://127.0.0.1:3000
+    
+    # Volume mounts for development (hot reload)
+    volumes:
+      # Mount source code for live development (optional - requires rebuild)
+      # - ./src:/app/src:ro
+      # Mount logs directory
+      - ./logs:/app/logs
+    
+    # Enable debugging port
+    ports:
+      - "8080:8080"
+      # Uncomment for remote debugging
+      # - "5005:5005"
+    
+    # Override command for debugging (uncomment if needed)
+    # command: ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-jar", "app.jar"]

@@ -5,14 +5,14 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/secure_messaging
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/secure_messaging}
     username: ${DB_USERNAME:secure_user}
     password: ${DB_PASSWORD:secure_password}
     driver-class-name: org.postgresql.Driver
     
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:create-drop}
     show-sql: false
     properties:
       hibernate:
