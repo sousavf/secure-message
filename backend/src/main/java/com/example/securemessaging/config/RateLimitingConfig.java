@@ -36,7 +36,7 @@ public class RateLimitingConfig extends OncePerRequestFilter {
         
         if (isRateLimited(clientIp)) {
             logger.warn("Rate limit exceeded for IP: {}", clientIp);
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setStatus(HttpServletResponse.SC_TOO_MANY_REQUESTS);
             response.getWriter().write("{\"error\":\"Rate limit exceeded. Please try again later.\"}");
             return;
         }
