@@ -10,7 +10,7 @@ class LinkManager {
     
     func generateShareableLink(messageId: UUID, key: SymmetricKey) -> String {
         let keyString = CryptoManager.keyToBase64String(key)
-        return "securemsg://message/\(messageId.uuidString)#\(keyString)"
+        return "securemsg://messages/\(messageId.uuidString)#\(keyString)"
     }
     
     func parseLink(_ urlString: String) throws -> ParsedLink {
@@ -24,8 +24,7 @@ class LinkManager {
         
         let pathComponents = url.pathComponents
         guard pathComponents.count >= 2,
-              pathComponents[1] == "message",
-              let messageId = UUID(uuidString: pathComponents[2]) else {
+              let messageId = UUID(uuidString: pathComponents[1]) else {
             throw LinkError.invalidMessageID
         }
         

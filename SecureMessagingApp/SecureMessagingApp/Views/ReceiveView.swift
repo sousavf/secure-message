@@ -11,19 +11,6 @@ struct ReceiveView: View {
     @StateObject private var apiService = APIService()
     private let linkManager = LinkManager()
     
-    init() {
-        NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("HandleSecureMessageURL"),
-            object: nil,
-            queue: .main
-        ) { notification in
-            if let url = notification.object as? String {
-                self.linkText = url
-                self.processLink()
-            }
-        }
-    }
-    
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
@@ -92,6 +79,12 @@ struct ReceiveView: View {
         .onChange(of: linkText) { _, newValue in
             if decryptedMessage != nil {
                 decryptedMessage = nil
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("HandleSecureMessageURL"))) { notification in
+            if let url = notification.object as? String {
+                linkText = url
+                processLink()
             }
         }
     }

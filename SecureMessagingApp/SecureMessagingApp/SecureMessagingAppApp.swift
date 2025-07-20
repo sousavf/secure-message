@@ -18,7 +18,7 @@ struct SecureMessagingAppApp: App {
            let messageId = components.path.components(separatedBy: "/").last,
            let fragment = components.fragment {
             
-            let fullURL = "https://whisper.stratholme.eu/api/message/\(messageId)#\(fragment)"
+            let fullURL = "https://whisper.stratholme.eu/api/messages/\(messageId)#\(fragment)"
             
             NotificationCenter.default.post(
                 name: NSNotification.Name("HandleSecureMessageURL"),
