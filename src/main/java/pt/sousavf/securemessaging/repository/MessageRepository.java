@@ -1,6 +1,6 @@
-package com.example.securemessaging.repository;
+package pt.sousavf.securemessaging.repository;
 
-import com.example.securemessaging.entity.Message;
+import pt.sousavf.securemessaging.entity.Message;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

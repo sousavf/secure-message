@@ -1,7 +1,7 @@
-package com.example.securemessaging.controller;
+package pt.sousavf.securemessaging.controller;
 
-import com.example.securemessaging.dto.StatsResponse;
-import com.example.securemessaging.service.MessageService;
+import pt.sousavf.securemessaging.dto.StatsResponse;
+import pt.sousavf.securemessaging.service.MessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;

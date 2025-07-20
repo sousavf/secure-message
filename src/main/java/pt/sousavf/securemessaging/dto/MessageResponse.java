@@ -1,6 +1,6 @@
-package com.example.securemessaging.dto;
+package pt.sousavf.securemessaging.dto;
 
-import com.example.securemessaging.entity.Message;
+import pt.sousavf.securemessaging.entity.Message;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.time.LocalDateTime;

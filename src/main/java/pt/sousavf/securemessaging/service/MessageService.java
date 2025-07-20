@@ -1,10 +1,10 @@
-package com.example.securemessaging.service;
+package pt.sousavf.securemessaging.service;
 
-import com.example.securemessaging.dto.CreateMessageRequest;
-import com.example.securemessaging.dto.MessageResponse;
-import com.example.securemessaging.dto.StatsResponse;
-import com.example.securemessaging.entity.Message;
-import com.example.securemessaging.repository.MessageRepository;
+import pt.sousavf.securemessaging.dto.CreateMessageRequest;
+import pt.sousavf.securemessaging.dto.MessageResponse;
+import pt.sousavf.securemessaging.dto.StatsResponse;
+import pt.sousavf.securemessaging.entity.Message;
+import pt.sousavf.securemessaging.repository.MessageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

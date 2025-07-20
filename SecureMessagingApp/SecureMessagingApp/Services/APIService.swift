@@ -4,7 +4,7 @@ class APIService: ObservableObject {
     private let baseURL: String
     private let session: URLSession
     
-    init(baseURL: String = "http://localhost:8080") {
+    init(baseURL: String = "https://whisper.stratholme.eu/api") {
         self.baseURL = baseURL
         
         let config = URLSessionConfiguration.default

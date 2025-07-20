@@ -1,4 +1,4 @@
-package com.example.securemessaging;
+package pt.sousavf.securemessaging;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

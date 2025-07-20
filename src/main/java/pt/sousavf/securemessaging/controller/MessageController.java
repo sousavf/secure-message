@@ -1,8 +1,8 @@
-package com.example.securemessaging.controller;
+package pt.sousavf.securemessaging.controller;
 
-import com.example.securemessaging.dto.CreateMessageRequest;
-import com.example.securemessaging.dto.MessageResponse;
-import com.example.securemessaging.service.MessageService;
+import pt.sousavf.securemessaging.dto.CreateMessageRequest;
+import pt.sousavf.securemessaging.dto.MessageResponse;
+import pt.sousavf.securemessaging.service.MessageService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

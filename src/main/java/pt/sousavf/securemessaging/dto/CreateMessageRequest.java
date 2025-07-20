@@ -1,4 +1,4 @@
-package com.example.securemessaging.dto;
+package pt.sousavf.securemessaging.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

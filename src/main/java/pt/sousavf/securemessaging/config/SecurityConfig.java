@@ -1,4 +1,4 @@
-package com.example.securemessaging.config;
+package pt.sousavf.securemessaging.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;

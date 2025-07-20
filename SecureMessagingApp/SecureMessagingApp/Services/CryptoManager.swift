@@ -29,11 +29,9 @@ class CryptoManager {
         
         let sealedBox = try AES.GCM.seal(messageData, using: key)
         
-        guard let nonce = sealedBox.nonce,
-              let ciphertext = sealedBox.ciphertext,
-              let tag = sealedBox.tag else {
-            throw CryptoError.encryptionFailed
-        }
+        let nonce = sealedBox.nonce
+        let ciphertext = sealedBox.ciphertext
+        let tag = sealedBox.tag
         
         return EncryptedMessage(
             ciphertext: ciphertext.base64EncodedString(),
@@ -63,7 +61,7 @@ class CryptoManager {
     
     static func securelyErase<T>(_ data: inout T) {
         withUnsafeMutableBytes(of: &data) { bytes in
-            bytes.initializeMemory(as: UInt8.self, repeating: 0)
+            _ = bytes.initializeMemory(as: UInt8.self, repeating: 0)
         }
     }
 }

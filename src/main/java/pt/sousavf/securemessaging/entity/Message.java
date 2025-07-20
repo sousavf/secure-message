@@ -1,4 +1,4 @@
-package com.example.securemessaging.entity;
+package pt.sousavf.securemessaging.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

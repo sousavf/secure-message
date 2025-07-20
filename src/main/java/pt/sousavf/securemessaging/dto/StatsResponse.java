@@ -1,4 +1,4 @@
-package com.example.securemessaging.dto;
+package pt.sousavf.securemessaging.dto;
 
 import java.time.LocalDate;
 

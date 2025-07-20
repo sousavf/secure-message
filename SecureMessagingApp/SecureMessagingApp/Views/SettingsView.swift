@@ -1,33 +1,9 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @AppStorage("serverURL") private var serverURL = "http://localhost:8080"
-    @AppStorage("domainURL") private var domainURL = "https://yourdomain.com"
-    
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Server Configuration")) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Backend Server URL")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        TextField("http://localhost:8080", text: $serverURL)
-                            .textFieldStyle(.roundedBorder)
-                            .autocapitalization(.none)
-                            .autocorrectionDisabled()
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Share Domain URL")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        TextField("https://yourdomain.com", text: $domainURL)
-                            .textFieldStyle(.roundedBorder)
-                            .autocapitalization(.none)
-                            .autocorrectionDisabled()
-                    }
-                }
                 
                 Section(header: Text("Security Information")) {
                     VStack(alignment: .leading, spacing: 8) {
