@@ -36,5 +36,16 @@
 	</dict>
 	<key>UILaunchScreen</key>
 	<dict/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>secure-messaging</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>securemsg</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
