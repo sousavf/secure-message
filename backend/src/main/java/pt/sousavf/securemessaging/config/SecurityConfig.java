@@ -51,6 +51,8 @@ public class SecurityConfig {
                 .requestMatchers("/stats/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/actuator/info").permitAll()
+                .requestMatchers("/.well-known/apple-app-site-association").permitAll()
+                .requestMatchers("/apple-app-site-association").permitAll()
             );
 
         return http.build();
