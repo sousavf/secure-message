@@ -8,6 +8,8 @@ struct ComposeView: View {
     @State private var showingShareSheet = false
     @State private var errorMessage: String?
     @State private var showingError = false
+    @State private var isCopyButtonPressed = false
+    @State private var isNewMessageButtonPressed = false
     @FocusState private var isTextEditorFocused: Bool
     
     @StateObject private var apiService = APIService()
@@ -15,8 +17,9 @@ struct ComposeView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 24) {
                     // Header Section
                     VStack(spacing: 12) {
                         Image(systemName: "lock.shield")
@@ -94,16 +97,30 @@ struct ComposeView: View {
                                 
                                 HStack(spacing: 12) {
                                     Button {
+                                        // Visual feedback
+                                        withAnimation(.easeInOut(duration: 0.1)) {
+                                            isCopyButtonPressed = true
+                                        }
+                                        
                                         UIPasteboard.general.string = link
                                         // Add haptic feedback
                                         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                                         impactFeedback.impactOccurred()
+                                        
+                                        // Reset visual feedback
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                            withAnimation(.easeInOut(duration: 0.1)) {
+                                                isCopyButtonPressed = false
+                                            }
+                                        }
                                     } label: {
                                         HStack {
                                             Image(systemName: "doc.on.doc")
                                             Text("Copy")
                                         }
                                         .frame(maxWidth: .infinity)
+                                        .scaleEffect(isCopyButtonPressed ? 0.95 : 1.0)
+                                        .opacity(isCopyButtonPressed ? 0.6 : 1.0)
                                     }
                                     .buttonStyle(.bordered)
                                     
@@ -120,15 +137,29 @@ struct ComposeView: View {
                                 }
                                 
                                 Button {
+                                    // Visual feedback
+                                    withAnimation(.easeInOut(duration: 0.1)) {
+                                        isNewMessageButtonPressed = true
+                                    }
+                                    
                                     // Clear everything to start a new message
                                     shareableLink = nil
                                     messageText = ""
+                                    
+                                    // Reset visual feedback
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        withAnimation(.easeInOut(duration: 0.1)) {
+                                            isNewMessageButtonPressed = false
+                                        }
+                                    }
                                 } label: {
                                     HStack {
                                         Image(systemName: "plus.circle")
                                         Text("New Message")
                                     }
                                     .frame(maxWidth: .infinity)
+                                    .scaleEffect(isNewMessageButtonPressed ? 0.95 : 1.0)
+                                    .opacity(isNewMessageButtonPressed ? 0.6 : 1.0)
                                 }
                                 .buttonStyle(.bordered)
                             }
@@ -136,22 +167,23 @@ struct ComposeView: View {
                         .padding(16)
                         .background(Color(.systemGray6).opacity(0.5))
                         .cornerRadius(12)
+                        .id("secureLinkSection")
                     }
                     
                     Spacer(minLength: 20)
+                    }
+                    .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
-            }
-            .navigationTitle("Compose")
-            .navigationBarTitleDisplayMode(.large)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                isTextEditorFocused = false
-            }
-            
-            // Action Button
-            VStack {
-                Button(action: encryptAndUpload) {
+                .navigationTitle("Compose")
+                .navigationBarTitleDisplayMode(.large)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    isTextEditorFocused = false
+                }
+                
+                // Action Button
+                VStack {
+                Button(action: { encryptAndUpload(scrollProxy: proxy) }) {
                     HStack(spacing: 8) {
                         if isEncrypting {
                             ProgressView()
@@ -171,8 +203,9 @@ struct ComposeView: View {
                 .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isEncrypting)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
+                }
+                .background(Color(.systemBackground).ignoresSafeArea())
             }
-            .background(Color(.systemBackground).ignoresSafeArea())
         }
         .sheet(isPresented: $showingShareSheet) {
             if let link = shareableLink {
@@ -192,7 +225,7 @@ struct ComposeView: View {
         }
     }
     
-    private func encryptAndUpload() {
+    private func encryptAndUpload(scrollProxy: ScrollViewProxy) {
         guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
@@ -212,6 +245,13 @@ struct ComposeView: View {
                     shareableLink = link
                     isEncrypting = false
                     messageText = ""
+                    
+                    // Auto-scroll to the secure link section
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            scrollProxy.scrollTo("secureLinkSection", anchor: .center)
+                        }
+                    }
                 }
             } catch {
                 await MainActor.run {
