@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - Safe Whisper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .support-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .contact-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .email-link {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            display: inline-block;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .email-link:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            color: white;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            margin: 30px 0 15px 0;
+            font-size: 1.5rem;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .contact-info h2 {
+            color: white;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        
+        .contact-info p {
+            color: rgba(255,255,255,0.9);
+        }
+        
+        ul {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        
+        li {
+            margin-bottom: 10px;
+            color: #555;
+        }
+        
+        .faq-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin: 15px 0;
+            padding: 20px;
+        }
+        
+        .faq-question {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .faq-answer {
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        
+        .feature-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        
+        .feature-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .response-time {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+            text-align: center;
+        }
+        
+        .links-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        
+        .links-section a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            margin: 0 15px;
+        }
+        
+        .links-section a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .email-link {
+                font-size: 1.2rem;
+                padding: 12px 20px;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🔒</div>
+            <h1>Support Center</h1>
+            <p class="subtitle">We're here to help with Safe Whisper</p>
+        </div>
+        
+        <div class="contact-info">
+            <h2>📧 Get in Touch</h2>
+            <p>Need help with Safe Whisper? Have questions about privacy or security? We're here to assist you.</p>
+            <a th:href="'mailto:' + ${supportEmail}" class="email-link" th:text="${supportEmail}">support@stratholme.eu</a>
+            <div class="response-time">
+                <strong>📞 Response Time:</strong> We typically respond within 24 hours
+            </div>
+        </div>
+        
+        <div class="support-section">
+            <h2>🤝 How We Can Help</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <div class="feature-title">Security Questions</div>
+                    <p>Questions about encryption, privacy, or security features</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <div class="feature-title">Technical Issues</div>
+                    <p>App crashes, connection problems, or functionality issues</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">❓</div>
+                    <div class="feature-title">General Support</div>
+                    <p>Usage questions, feature requests, or general inquiries</p>
+                </div>
+            </div>
+        </div>
+        
+        <h2>❓ Frequently Asked Questions</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question">Q: How secure are my messages?</div>
+            <div class="faq-answer">A: All messages are encrypted end-to-end using military-grade encryption. We cannot read your messages - only you and your recipient can decrypt them.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">Q: Do you store my messages?</div>
+            <div class="faq-answer">A: No. Messages are temporarily stored on our servers only during transit (usually seconds) and are automatically deleted once delivered. We have zero-knowledge architecture.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">Q: Can you recover lost messages?</div>
+            <div class="faq-answer">A: No. By design, we cannot recover messages because we don't have access to your encryption keys. This ensures maximum privacy and security.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">Q: What data do you collect?</div>
+            <div class="faq-answer">A: We collect no personal data, message content, or usage patterns. See our <a href="/privacy" style="color: #667eea;">Privacy Policy</a> for full details.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">Q: Is Safe Whisper free to use?</div>
+            <div class="faq-answer">A: Yes, Safe Whisper is completely free to use. There are no premium features or subscription plans.</div>
+        </div>
+        
+        <h2>📱 When Contacting Support</h2>
+        <p>To help us assist you faster, please include:</p>
+        <ul>
+            <li>Your device type and operating system version</li>
+            <li>Safe Whisper app version (if applicable)</li>
+            <li>A detailed description of the issue</li>
+            <li>Steps to reproduce the problem</li>
+            <li>Any error messages you've encountered</li>
+        </ul>
+        
+        <div class="response-time">
+            <h2>⏰ What to Expect</h2>
+            <p><strong>Response Time:</strong> 12-24 hours for most inquiries</p>
+            <p><strong>Priority Support:</strong> Security-related issues receive immediate attention</p>
+            <p><strong>Language:</strong> We provide support in English</p>
+        </div>
+        
+        <div class="links-section">
+            <h2>🔗 Additional Resources</h2>
+            <p>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/support">Support Center</a>
+                <a href="/">Safe Whisper Home</a>
+            </p>
+        </div>
+        
+        <div class="support-section">
+            <h2>🛡️ Security Notice</h2>
+            <p><strong>Important:</strong> We will never ask for your encryption keys, passwords, or personal information via email. If you receive suspicious communications claiming to be from Safe Whisper, please report them to <span th:text="${supportEmail}">support@stratholme.eu</span></p>
+        </div>
+    </div>
+</body>
+</html>

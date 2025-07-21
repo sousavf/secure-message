@@ -39,6 +39,7 @@ public class SecurityConfig {
                 .requestMatchers("/messages/**").permitAll()
                 .requestMatchers("/stats/**").permitAll()
                 .requestMatchers("/privacy/**").permitAll()
+                .requestMatchers("/support/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/actuator/info").permitAll()
                 .requestMatchers("/error").permitAll()
