@@ -58,15 +58,16 @@ class APIService: ObservableObject {
     
     func retrieveMessage(id: UUID) async throws -> EncryptedMessage {
         let urlRequest = try createRequest(for: "/\(id.uuidString)")
-        print(urlRequest)
+        print("APIService: Making request to: \(urlRequest.url?.absoluteString ?? "unknown")")
         
         let (data, response) = try await session.data(for: urlRequest)
-        print(response)
+        print("APIService: Response received: \(response)")
         
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("APIService: Invalid response type")
             throw NetworkError.unknownError
         }
-        print(httpResponse.statusCode)
+        print("APIService: HTTP Status Code: \(httpResponse.statusCode)")
         
         switch httpResponse.statusCode {
         case 200:

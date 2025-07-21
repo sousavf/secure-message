@@ -44,6 +44,7 @@ struct ReceiveView: View {
                             
                             if !linkText.isEmpty {
                                 Button("Clear") {
+                                    print("ReceiveView: User clicked Clear button")
                                     linkText = ""
                                     decryptedMessage = nil
                                 }
@@ -106,6 +107,7 @@ struct ReceiveView: View {
                     
                     // Decrypted Message Section
                     if let message = decryptedMessage {
+                        let _ = print("ReceiveView: Rendering decrypted message UI with content: '\(message)'")
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "checkmark.seal.fill")
@@ -191,13 +193,18 @@ struct ReceiveView: View {
         } message: {
             Text(errorMessage ?? "An error occurred")
         }
-        .onChange(of: linkText) { _, newValue in
-            if decryptedMessage != nil {
+        .onChange(of: linkText) { oldValue, newValue in
+            // Only clear decrypted message if user is actively changing the link text
+            // Don't clear it if we're just clearing the text after successful decryption
+            if !oldValue.isEmpty && !newValue.isEmpty && decryptedMessage != nil {
+                print("ReceiveView: User changed link text, clearing decrypted message")
                 decryptedMessage = nil
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("HandleSecureMessageURL"))) { notification in
+            print("ReceiveView: Received HandleSecureMessageURL notification")
             if let url = notification.object as? String {
+                print("ReceiveView: Setting linkText to: \(url)")
                 linkText = url
                 processLink()
             }
@@ -206,36 +213,51 @@ struct ReceiveView: View {
     
     private func processLink() {
         guard !linkText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            print("ReceiveView: Link text is empty")
             return
         }
         
+        print("ReceiveView: Starting to process link: \(linkText)")
         isProcessing = true
         decryptedMessage = nil
         
         Task {
             do {
+                print("ReceiveView: Parsing link...")
                 let parsedLink = try linkManager.parseLink(linkText.trimmingCharacters(in: .whitespacesAndNewlines))
+                print("ReceiveView: Link parsed successfully. MessageID: \(parsedLink.messageId)")
+                
+                print("ReceiveView: Retrieving encrypted message from server...")
                 let encryptedMessage = try await apiService.retrieveMessage(id: parsedLink.messageId)
+                print("ReceiveView: Encrypted message retrieved successfully")
+                
+                print("ReceiveView: Decrypting message...")
                 let decrypted = try CryptoManager.decrypt(encryptedMessage: encryptedMessage, key: parsedLink.key)
+                print("ReceiveView: Message decrypted successfully. Length: \(decrypted.count) characters")
                 
                 await MainActor.run {
+                    print("ReceiveView: Setting decrypted message in UI")
                     decryptedMessage = decrypted
                     isProcessing = false
-                    linkText = ""
+                    // Don't clear linkText immediately to avoid triggering onChange
+                    print("ReceiveView: UI updated with decrypted message")
                 }
             } catch NetworkError.messageConsumed {
+                print("ReceiveView: Error - Message already consumed")
                 await MainActor.run {
                     errorMessage = "This message has already been read and destroyed."
                     showingError = true
                     isProcessing = false
                 }
             } catch NetworkError.messageExpired {
+                print("ReceiveView: Error - Message expired")
                 await MainActor.run {
                     errorMessage = "This message has expired."
                     showingError = true
                     isProcessing = false
                 }
             } catch {
+                print("ReceiveView: Error - \(error)")
                 await MainActor.run {
                     errorMessage = error.localizedDescription
                     showingError = true
