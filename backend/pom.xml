@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.example</groupId>
+    <groupId>pt.sousavf</groupId>
     <artifactId>secure-messaging</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
