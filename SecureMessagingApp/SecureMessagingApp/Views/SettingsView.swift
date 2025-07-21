@@ -106,6 +106,23 @@ struct SettingsView: View {
                     .background(Color(.systemGray6).opacity(0.3))
                     .cornerRadius(12)
                     
+                    // Useful Links Section
+                    VStack(spacing: 16) {
+                        Text("Useful Links")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        VStack(spacing: 12) {
+                            LinkButton(title: "Support & Contact", url: "https://whisper.stratholme.eu/support/contact", icon: "questionmark.circle.fill")
+                            LinkButton(title: "About Me", url: "https://whisper.stratholme.eu/about/me", icon: "person.circle.fill")
+                            LinkButton(title: "Privacy Policy", url: "https://whisper.stratholme.eu/privacy/policy", icon: "shield.fill")
+                        }
+                    }
+                    .padding(16)
+                    .background(Color(.systemGray6).opacity(0.3))
+                    .cornerRadius(12)
+                    
                     Spacer(minLength: 20)
                 }
                 .padding(.horizontal, 20)
@@ -196,6 +213,39 @@ struct InfoRow: View {
                 .foregroundStyle(.secondary)
                 .font(.system(.body, design: .monospaced))
         }
+    }
+}
+
+struct LinkButton: View {
+    let title: String
+    let url: String
+    let icon: String
+    
+    var body: some View {
+        Button(action: {
+            if let url = URL(string: url) {
+                UIApplication.shared.open(url)
+            }
+        }) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundStyle(.indigo)
+                    .frame(width: 20)
+                
+                Text(title)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
