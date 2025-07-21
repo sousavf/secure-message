@@ -70,15 +70,57 @@ class APIService: ObservableObject {
         
         switch httpResponse.statusCode {
         case 200:
-            let messageResponse = try JSONDecoder().decode(MessageResponse.self, from: data)
-            
-            guard let ciphertext = messageResponse.ciphertext,
-                  let nonce = messageResponse.nonce,
-                  let tag = messageResponse.tag else {
-                throw NetworkError.decodingError
+            // Debug: Print the raw response
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("Raw JSON Response: \(jsonString)")
             }
             
-            return EncryptedMessage(ciphertext: ciphertext, nonce: nonce, tag: tag)
+            do {
+                let decoder = JSONDecoder()
+                // Configure date decoding for Spring Boot LocalDateTime format
+                decoder.dateDecodingStrategy = .custom { decoder in
+                    let container = try decoder.singleValueContainer()
+                    let dateString = try container.decode(String.self)
+                    
+                    // Try multiple date formats that Spring Boot might use
+                    let formatters = [
+                        "yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
+                        "yyyy-MM-dd'T'HH:mm:ss.SSS",
+                        "yyyy-MM-dd'T'HH:mm:ss",
+                        "yyyy-MM-dd HH:mm:ss",
+                        "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                    ]
+                    
+                    for format in formatters {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = format
+                        formatter.locale = Locale(identifier: "en_US_POSIX")
+                        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                        if let date = formatter.date(from: dateString) {
+                            return date
+                        }
+                    }
+                    
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(dateString)")
+                }
+                
+                let messageResponse = try decoder.decode(MessageResponse.self, from: data)
+                print("Successfully decoded MessageResponse: \(messageResponse)")
+                
+                guard let ciphertext = messageResponse.ciphertext,
+                      let nonce = messageResponse.nonce,
+                      let tag = messageResponse.tag else {
+                    throw NetworkError.decodingError
+                }
+                
+                return EncryptedMessage(ciphertext: ciphertext, nonce: nonce, tag: tag)
+            } catch {
+                print("Decoding error: \(error)")
+                if let decodingError = error as? DecodingError {
+                    print("DecodingError details: \(decodingError)")
+                }
+                throw NetworkError.decodingError
+            }
             
         case 410:
             throw NetworkError.messageConsumed
