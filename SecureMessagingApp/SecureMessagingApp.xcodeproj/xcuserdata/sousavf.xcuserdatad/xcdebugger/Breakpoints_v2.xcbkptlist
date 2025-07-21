@@ -7,52 +7,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "DC4612A7-628D-45C6-BEBF-AA59D77B9FA1"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "SecureMessagingApp/Services/APIService.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "81"
-            endingLineNumber = "81"
-            landmarkName = "retrieveMessage(id:)"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "DC4612A7-628D-45C6-BEBF-AA59D77B9FA1 - 78f6a9d06f40e4b9"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(3) suspend resume partial function for SecureMessagingApp.APIService.retrieveMessage(id: Foundation.UUID) async throws -&gt; SecureMessagingApp.EncryptedMessage"
-                  moduleName = "SecureMessagingApp.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/sousavf/Documents/secure-message/SecureMessagingApp/SecureMessagingApp/Services/APIService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "83"
-                  endingLineNumber = "83">
-               </Location>
-               <Location
-                  uuid = "DC4612A7-628D-45C6-BEBF-AA59D77B9FA1 - 78f6a9d06f40eb7b"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(3) suspend resume partial function for SecureMessagingApp.APIService.retrieveMessage(id: Foundation.UUID) async throws -&gt; SecureMessagingApp.EncryptedMessage"
-                  moduleName = "SecureMessagingApp.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/sousavf/Documents/secure-message/SecureMessagingApp/SecureMessagingApp/Services/APIService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "81"
-                  endingLineNumber = "81">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "F3494091-AB2A-45B8-A037-D23A291A2C9A"
             shouldBeEnabled = "No"
             ignoreCount = "0"
@@ -101,68 +55,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "3D96F955-FADF-4FD0-83D4-FABA8A71DFB9"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "SecureMessagingApp/Services/APIService.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "63"
-            endingLineNumber = "63"
-            landmarkName = "retrieveMessage(id:)"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "3D96F955-FADF-4FD0-83D4-FABA8A71DFB9 - 79c406fcb519b5cb"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(1) suspend resume partial function for SecureMessagingApp.APIService.retrieveMessage(id: Foundation.UUID) async throws -&gt; SecureMessagingApp.EncryptedMessage"
-                  moduleName = "SecureMessagingApp.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/sousavf/Documents/secure-message/SecureMessagingApp/SecureMessagingApp/Services/APIService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "63"
-                  endingLineNumber = "63">
-               </Location>
-               <Location
-                  uuid = "3D96F955-FADF-4FD0-83D4-FABA8A71DFB9 - fb8006467c544bd4"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(4) suspend resume partial function for SecureMessagingApp.APIService.retrieveMessage(id: Foundation.UUID) async throws -&gt; SecureMessagingApp.EncryptedMessage"
-                  moduleName = "SecureMessagingApp.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/sousavf/Documents/secure-message/SecureMessagingApp/SecureMessagingApp/Services/APIService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "63"
-                  endingLineNumber = "63">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "ABA29942-30CC-4C6C-8424-00A27AB845EC"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "SecureMessagingApp/Services/APIService.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "66"
-            endingLineNumber = "66"
-            landmarkName = "retrieveMessage(id:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "3D82534F-5A95-4EA2-A298-FB6417A64EB7"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
@@ -174,82 +66,6 @@
             endingLineNumber = "71"
             landmarkName = "retrieveMessage(id:)"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "3D82534F-5A95-4EA2-A298-FB6417A64EB7 - 78f6a9d06f40ea0c"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(3) suspend resume partial function for SecureMessagingApp.APIService.retrieveMessage(id: Foundation.UUID) async throws -&gt; SecureMessagingApp.EncryptedMessage"
-                  moduleName = "SecureMessagingApp.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/sousavf/Documents/secure-message/SecureMessagingApp/SecureMessagingApp/Services/APIService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "72"
-                  endingLineNumber = "72">
-               </Location>
-               <Location
-                  uuid = "3D82534F-5A95-4EA2-A298-FB6417A64EB7 - 78f6a9d06f40ea2d"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(3) suspend resume partial function for SecureMessagingApp.APIService.retrieveMessage(id: Foundation.UUID) async throws -&gt; SecureMessagingApp.EncryptedMessage"
-                  moduleName = "SecureMessagingApp.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/sousavf/Documents/secure-message/SecureMessagingApp/SecureMessagingApp/Services/APIService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "71"
-                  endingLineNumber = "71">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "D84EF52D-D1C3-4F6B-92ED-2233A98E3708"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "SecureMessagingApp/Services/APIService.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "74"
-            endingLineNumber = "74"
-            landmarkName = "retrieveMessage(id:)"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "D84EF52D-D1C3-4F6B-92ED-2233A98E3708 - 78f6a9d06f40ea42"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(3) suspend resume partial function for SecureMessagingApp.APIService.retrieveMessage(id: Foundation.UUID) async throws -&gt; SecureMessagingApp.EncryptedMessage"
-                  moduleName = "SecureMessagingApp.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/sousavf/Documents/secure-message/SecureMessagingApp/SecureMessagingApp/Services/APIService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "74"
-                  endingLineNumber = "74">
-               </Location>
-               <Location
-                  uuid = "D84EF52D-D1C3-4F6B-92ED-2233A98E3708 - 78f6a9d06f40eba1"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(3) suspend resume partial function for SecureMessagingApp.APIService.retrieveMessage(id: Foundation.UUID) async throws -&gt; SecureMessagingApp.EncryptedMessage"
-                  moduleName = "SecureMessagingApp.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/sousavf/Documents/secure-message/SecureMessagingApp/SecureMessagingApp/Services/APIService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "75"
-                  endingLineNumber = "75">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -266,51 +82,53 @@
             endingLineNumber = "73"
             landmarkName = "retrieveMessage(id:)"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "B40145E9-460C-4584-969B-06ED49C891F6 - 78f6a9d06f40ea42"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(3) suspend resume partial function for SecureMessagingApp.APIService.retrieveMessage(id: Foundation.UUID) async throws -&gt; SecureMessagingApp.EncryptedMessage"
-                  moduleName = "SecureMessagingApp.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/sousavf/Documents/secure-message/SecureMessagingApp/SecureMessagingApp/Services/APIService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "74"
-                  endingLineNumber = "74">
-               </Location>
-               <Location
-                  uuid = "B40145E9-460C-4584-969B-06ED49C891F6 - 78f6a9d06f40ea63"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(3) suspend resume partial function for SecureMessagingApp.APIService.retrieveMessage(id: Foundation.UUID) async throws -&gt; SecureMessagingApp.EncryptedMessage"
-                  moduleName = "SecureMessagingApp.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/sousavf/Documents/secure-message/SecureMessagingApp/SecureMessagingApp/Services/APIService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "73"
-                  endingLineNumber = "73">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "E1587055-53A1-48BF-9F3E-02C16700416F"
-            shouldBeEnabled = "Yes"
+            uuid = "638F0F0C-D86C-4AAF-B717-9D3EA088488B"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "SecureMessagingApp/Services/APIService.swift"
+            filePath = "SecureMessagingApp/Views/ReceiveView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "75"
-            endingLineNumber = "75"
-            landmarkName = "retrieveMessage(id:)"
+            startingLineNumber = "106"
+            endingLineNumber = "106"
+            landmarkName = "processLink()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "A04A3922-3214-4D07-BF85-46EA0214A5C8"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "SecureMessagingApp/Views/ReceiveView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "112"
+            endingLineNumber = "112"
+            landmarkName = "processLink()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "FB094B68-5E6A-4D23-8ACA-503974F775F3"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "SecureMessagingApp/Views/ReceiveView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "113"
+            endingLineNumber = "113"
+            landmarkName = "processLink()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

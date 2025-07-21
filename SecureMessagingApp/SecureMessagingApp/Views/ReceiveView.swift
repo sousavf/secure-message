@@ -7,72 +7,187 @@ struct ReceiveView: View {
     @State private var isProcessing = false
     @State private var errorMessage: String?
     @State private var showingError = false
+    @FocusState private var isTextFieldFocused: Bool
     
     @StateObject private var apiService = APIService()
     private let linkManager = LinkManager()
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Secure Message Link")
-                        .font(.headline)
-                    
-                    TextField("Paste secure message link here", text: $linkText)
-                        .textFieldStyle(.roundedBorder)
-                        .autocapitalization(.none)
-                        .autocorrectionDisabled()
-                }
-                
-                if let message = decryptedMessage {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Decrypted Message")
-                            .font(.headline)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header Section
+                    VStack(spacing: 12) {
+                        Image(systemName: "envelope.open.fill")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.indigo)
                         
-                        ScrollView {
-                            Text(message)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .cornerRadius(8)
-                        }
-                        .frame(maxHeight: 200)
+                        Text("Receive Secure Message")
+                            .font(.title2)
+                            .fontWeight(.semibold)
                         
-                        Button("Copy Message") {
-                            UIPasteboard.general.string = message
-                        }
-                        .buttonStyle(.bordered)
+                        Text("Paste a secure message link to decrypt and read it")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                     }
-                }
-                
-                Spacer()
-                
-                VStack(spacing: 12) {
-                    Button(action: processLink) {
+                    .padding(.top)
+                    
+                    // Link Input Section
+                    VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            if isProcessing {
-                                ProgressView()
-                                    .scaleEffect(0.8)
+                            Text("Message Link")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            
+                            Spacer()
+                            
+                            if !linkText.isEmpty {
+                                Button("Clear") {
+                                    linkText = ""
+                                    decryptedMessage = nil
+                                }
+                                .font(.caption)
+                                .foregroundStyle(.indigo)
                             }
-                            Text(isProcessing ? "Processing..." : "Retrieve Message")
+                        }
+                        
+                        VStack(spacing: 12) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(.systemGray6))
+                                    .stroke(isTextFieldFocused ? Color.indigo : Color(.systemGray4), lineWidth: isTextFieldFocused ? 2 : 1)
+                                    .frame(height: 50)
+                                
+                                HStack {
+                                    Image(systemName: "link")
+                                        .foregroundStyle(.secondary)
+                                        .padding(.leading, 12)
+                                    
+                                    TextField("https://whisper.stratholme.eu/api/messages/...", text: $linkText)
+                                        .focused($isTextFieldFocused)
+                                        .textFieldStyle(.plain)
+                                        .autocapitalization(.none)
+                                        .autocorrectionDisabled()
+                                        .keyboardType(.URL)
+                                    
+                                    if !linkText.isEmpty {
+                                        Button {
+                                            linkText = ""
+                                            decryptedMessage = nil
+                                        } label: {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .padding(.trailing, 12)
+                                    }
+                                }
+                            }
+                            .animation(.easeInOut(duration: 0.2), value: isTextFieldFocused)
+                            
+                            Button {
+                                if let clipboardText = UIPasteboard.general.string {
+                                    linkText = clipboardText
+                                    // Add haptic feedback
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                    impactFeedback.impactOccurred()
+                                }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "doc.on.clipboard")
+                                    Text("Paste from Clipboard")
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
+                            }
+                            .buttonStyle(.bordered)
                         }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(linkText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isProcessing)
                     
-                    Button("Paste from Clipboard") {
-                        if let clipboardText = UIPasteboard.general.string {
-                            linkText = clipboardText
+                    // Decrypted Message Section
+                    if let message = decryptedMessage {
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .foregroundStyle(.green)
+                                Text("Message Decrypted")
+                                    .font(.headline)
+                                    .foregroundStyle(.green)
+                                Spacer()
+                            }
+                            
+                            VStack(spacing: 12) {
+                                ScrollView {
+                                    Text(message)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(16)
+                                        .background(Color(.systemGray6))
+                                        .cornerRadius(12)
+                                        .font(.body)
+                                        .textSelection(.enabled)
+                                }
+                                .frame(maxHeight: 200)
+                                
+                                Button {
+                                    UIPasteboard.general.string = message
+                                    // Add haptic feedback
+                                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                    impactFeedback.impactOccurred()
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "doc.on.doc")
+                                        Text("Copy Message")
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                            }
                         }
+                        .padding(16)
+                        .background(Color(.systemGreen).opacity(0.1))
+                        .cornerRadius(12)
                     }
-                    .buttonStyle(.bordered)
+                    
+                    Spacer(minLength: 20)
                 }
+                .padding(.horizontal, 20)
             }
-            .padding()
             .navigationTitle("Receive")
+            .navigationBarTitleDisplayMode(.large)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isTextFieldFocused = false
+            }
+            
+            // Action Button
+            VStack {
+                Button(action: processLink) {
+                    HStack(spacing: 8) {
+                        if isProcessing {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "envelope.open.fill")
+                        }
+                        Text(isProcessing ? "Decrypting..." : "Retrieve Message")
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.indigo)
+                .disabled(linkText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isProcessing)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+            }
+            .background(Color(.systemBackground).ignoresSafeArea())
         }
         .alert("Error", isPresented: $showingError) {
-            Button("OK") { }
+            Button("OK") {
+                errorMessage = nil
+            }
         } message: {
             Text(errorMessage ?? "An error occurred")
         }
