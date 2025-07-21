@@ -33,6 +33,10 @@ struct MainView: View {
             // Dismiss keyboard when switching tabs
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("HandleSecureMessageURL"))) { notification in
+            // Switch to Receive tab when Universal Link is handled
+            selectedTab = 1
+        }
     }
 }
 

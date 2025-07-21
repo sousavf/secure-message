@@ -206,7 +206,12 @@ struct ReceiveView: View {
             if let url = notification.object as? String {
                 print("ReceiveView: Setting linkText to: \(url)")
                 linkText = url
-                processLink()
+                
+                // Add small delay to ensure UI is ready before processing
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    print("ReceiveView: Auto-processing Universal Link")
+                    processLink()
+                }
             }
         }
     }
