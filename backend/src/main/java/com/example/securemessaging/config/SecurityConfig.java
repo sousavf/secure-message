@@ -38,6 +38,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/messages/**").permitAll()
                 .requestMatchers("/stats/**").permitAll()
+                .requestMatchers("/privacy/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/actuator/info").permitAll()
                 .requestMatchers("/error").permitAll()

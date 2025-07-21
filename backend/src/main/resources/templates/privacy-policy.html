@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Safe Whisper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .last-updated {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            margin: 30px 0 15px 0;
+            font-size: 1.5rem;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        
+        ul {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+        
+        .highlight {
+            background: #e8f4fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+        
+        .contact {
+            background: #f1f8e9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🔒</div>
+            <h1 th:text="${appName}">Safe Whisper</h1>
+            <p class="subtitle">Private. Encrypted. Yours.</p>
+        </div>
+        
+        <div class="last-updated">
+            <strong>Last Updated:</strong> <span th:text="${lastUpdated}">July 21, 2025</span>
+        </div>
+        
+        <div class="highlight">
+            <h2>🛡️ Privacy First Promise</h2>
+            <p><strong>Safe Whisper is built with zero-knowledge architecture. We cannot and do not access, read, or store your private messages or data.</strong></p>
+        </div>
+        
+        <h2>1. Information We Do NOT Collect</h2>
+        <p>Safe Whisper is designed with privacy as its foundation. We explicitly do NOT collect:</p>
+        <ul>
+            <li><strong>Message content</strong> - Your messages are encrypted end-to-end and we cannot decrypt them</li>
+            <li><strong>Personal information</strong> - No names, email addresses, phone numbers, or contact lists</li>
+            <li><strong>Location data</strong> - We do not track or store your geographical location</li>
+            <li><strong>Device information</strong> - No device IDs, advertising IDs, or hardware fingerprinting</li>
+            <li><strong>Usage patterns</strong> - We do not analyze how you use the app or with whom you communicate</li>
+            <li><strong>Metadata</strong> - No timestamps, message sizes, or communication patterns are stored</li>
+        </ul>
+        
+        <h2>2. Technical Data Processing</h2>
+        <p>To provide the secure messaging service, we process only the following technical data:</p>
+        <ul>
+            <li><strong>Encrypted message payloads</strong> - Stored temporarily and deleted after successful delivery</li>
+            <li><strong>Cryptographic keys</strong> - Only public keys for message routing (private keys never leave your device)</li>
+            <li><strong>Connection data</strong> - Basic network information required for message delivery (immediately discarded)</li>
+        </ul>
+        
+        <h2>3. Zero-Knowledge Architecture</h2>
+        <p>Our service is built on zero-knowledge principles:</p>
+        <ul>
+            <li>All encryption happens on your device using keys only you control</li>
+            <li>Our servers only relay encrypted data without any ability to decrypt it</li>
+            <li>Messages are automatically deleted from our servers once delivered</li>
+            <li>We have no backdoors, master keys, or recovery mechanisms for your data</li>
+        </ul>
+        
+        <h2>4. Data Storage and Retention</h2>
+        <p><strong>We do not store user data.</strong> Specifically:</p>
+        <ul>
+            <li>Messages exist on our servers only during transit (typically seconds)</li>
+            <li>No user accounts, profiles, or persistent data are maintained</li>
+            <li>Server logs are minimal and contain no personal information</li>
+            <li>All temporary data is purged automatically</li>
+        </ul>
+        
+        <h2>5. Third-Party Services</h2>
+        <p>Safe Whisper does not integrate with third-party analytics, advertising, or tracking services. We do not share any data with third parties because we don't collect personal data to share.</p>
+        
+        <h2>6. Security Measures</h2>
+        <ul>
+            <li>End-to-end encryption using industry-standard cryptography</li>
+            <li>Perfect forward secrecy ensuring past communications remain secure</li>
+            <li>Regular security audits and vulnerability assessments</li>
+            <li>Minimal server-side data processing and storage</li>
+        </ul>
+        
+        <h2>7. Your Rights and Control</h2>
+        <p>Since we don't collect personal data, traditional data protection rights (access, deletion, portability) are not applicable. However, you maintain complete control over:</p>
+        <ul>
+            <li>Your encryption keys (stored only on your device)</li>
+            <li>Your message history (stored only on your device)</li>
+            <li>Your app usage (no tracking or monitoring by us)</li>
+        </ul>
+        
+        <h2>8. Legal Compliance</h2>
+        <p>Our zero-knowledge architecture means:</p>
+        <ul>
+            <li>We cannot comply with data requests for user communications (we don't have access)</li>
+            <li>We cannot provide user data to authorities (we don't collect it)</li>
+            <li>We cannot recover lost messages or accounts (by design)</li>
+        </ul>
+        
+        <h2>9. Children's Privacy</h2>
+        <p>Safe Whisper does not collect personal information from anyone, including children under 13. Our zero-knowledge architecture provides the same privacy protection for all users regardless of age.</p>
+        
+        <h2>10. Changes to This Privacy Policy</h2>
+        <p>We may update this privacy policy to reflect changes in our practices or for legal compliance. Any changes will be posted on this page with an updated "Last Updated" date. Continued use of Safe Whisper constitutes acceptance of any changes.</p>
+        
+        <div class="contact">
+            <h2>📧 Contact Us</h2>
+            <p>If you have questions about this Privacy Policy or Safe Whisper's privacy practices, please contact us at:</p>
+            <p><strong>Email:</strong> privacy@safewhisper.app</p>
+            <p>We're committed to transparency and will respond to privacy inquiries promptly.</p>
+        </div>
+        
+        <div class="highlight">
+            <h2>🔐 Remember</h2>
+            <p><strong>Your privacy is not just a feature—it's our foundation.</strong> Safe Whisper was built from the ground up to ensure that your communications remain truly private, even from us.</p>
+        </div>
+    </div>
+</body>
+</html>
