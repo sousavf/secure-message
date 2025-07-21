@@ -4,18 +4,18 @@ import CryptoKit
 class LinkManager {
     private let baseURL: String
     
-    init(baseURL: String = "https://whisper.stratholme.eu/api") {
+    init(baseURL: String = "https://whisper.stratholme.eu") {
         self.baseURL = baseURL
     }
     
     func generateShareableLink(messageId: UUID, key: SymmetricKey) -> String {
         let keyString = CryptoManager.keyToBase64String(key)
-        return "\(baseURL)/messages/\(messageId.uuidString)/preview#\(keyString)"
+        return "\(baseURL)/\(messageId.uuidString)/preview#\(keyString)"
     }
     
     func generateDirectLink(messageId: UUID, key: SymmetricKey) -> String {
         let keyString = CryptoManager.keyToBase64String(key)
-        return "\(baseURL)/messages/\(messageId.uuidString)#\(keyString)"
+        return "\(baseURL)/\(messageId.uuidString)#\(keyString)"
     }
     
     func parseLink(_ urlString: String) throws -> ParsedLink {
@@ -32,14 +32,14 @@ class LinkManager {
         // Handle both direct links and preview links
         var messageIdString: String?
         
-        if pathComponents.count >= 4 && pathComponents[2] == "messages" {
-            // Direct link: /api/messages/{id}
-            if pathComponents.count == 4 {
-                messageIdString = pathComponents[3]
+        if pathComponents.count >= 2 {
+            // Direct link: /{id}
+            if pathComponents.count == 2 {
+                messageIdString = pathComponents[1]
             }
-            // Preview link: /api/messages/{id}/preview
-            else if pathComponents.count == 5 && pathComponents[4] == "preview" {
-                messageIdString = pathComponents[3]
+            // Preview link: /{id}/preview
+            else if pathComponents.count == 3 && pathComponents[2] == "preview" {
+                messageIdString = pathComponents[1]
             }
         }
         

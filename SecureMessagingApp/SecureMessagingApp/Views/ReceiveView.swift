@@ -65,7 +65,7 @@ struct ReceiveView: View {
                                         .foregroundStyle(.secondary)
                                         .padding(.leading, 12)
                                     
-                                    TextField("https://whisper.stratholme.eu/api/messages/...", text: $linkText)
+                                    TextField("https://whisper.stratholme.eu/...", text: $linkText)
                                         .focused($isTextFieldFocused)
                                         .textFieldStyle(.plain)
                                         .autocapitalization(.none)

@@ -15,14 +15,12 @@ struct SecureMessagingAppApp: App {
         guard url.scheme == "https" && url.host == "whisper.stratholme.eu" else { return }
         
         let pathComponents = url.pathComponents
-        guard pathComponents.count >= 4,
-              pathComponents[1] == "api",
-              pathComponents[2] == "messages",
+        guard pathComponents.count >= 2,
               url.fragment != nil else { return }
         
         // Convert preview links to direct links for the app
         var finalURL = url.absoluteString
-        if pathComponents.count == 5 && pathComponents[4] == "preview" {
+        if pathComponents.count == 3 && pathComponents[2] == "preview" {
             // Remove "/preview" from the URL
             finalURL = finalURL.replacingOccurrences(of: "/preview#", with: "#")
         }

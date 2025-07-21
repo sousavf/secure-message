@@ -4,7 +4,7 @@ class APIService: ObservableObject {
     private let baseURL: String
     private let session: URLSession
     
-    init(baseURL: String = "https://whisper.stratholme.eu/api") {
+    init(baseURL: String = "https://whisper.stratholme.eu") {
         self.baseURL = baseURL
         
         let config = URLSessionConfiguration.default
@@ -15,7 +15,7 @@ class APIService: ObservableObject {
     }
     
     private func createRequest(for endpoint: String, method: String = "GET") throws -> URLRequest {
-        guard let url = URL(string: "\(baseURL)/messages\(endpoint)") else {
+        guard let url = URL(string: "\(baseURL)\(endpoint)") else {
             throw NetworkError.invalidURL
         }
         

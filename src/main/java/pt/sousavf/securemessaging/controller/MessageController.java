@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/messages")
+@RequestMapping("/")
 @CrossOrigin(origins = {"http://localhost:3000", "https://localhost:3000"})
 public class MessageController {
 
