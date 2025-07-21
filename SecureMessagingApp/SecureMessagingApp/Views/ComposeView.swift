@@ -26,11 +26,11 @@ struct ComposeView: View {
                             .font(.system(size: 40))
                             .foregroundStyle(.indigo)
                         
-                        Text("Create Secure Message")
+                        Text("Create Safe Whisper")
                             .font(.title2)
                             .fontWeight(.semibold)
                         
-                        Text("Your message will be encrypted and can only be read once")
+                        Text("Your whisper will be encrypted and can only be read once")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -40,7 +40,7 @@ struct ComposeView: View {
                     // Message Input Section
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Text("Message")
+                            Text("Whisper")
                                 .font(.headline)
                                 .foregroundStyle(.primary)
                             
@@ -57,7 +57,7 @@ struct ComposeView: View {
                                 .stroke(isTextEditorFocused ? Color.indigo : Color(.systemGray4), lineWidth: isTextEditorFocused ? 2 : 1)
                             
                             if messageText.isEmpty {
-                                Text("Type your secure message here...")
+                                Text("Type your safe whisper here...")
                                     .foregroundStyle(.tertiary)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 16)
@@ -155,7 +155,7 @@ struct ComposeView: View {
                                 } label: {
                                     HStack {
                                         Image(systemName: "plus.circle")
-                                        Text("New Message")
+                                        Text("New Whisper")
                                     }
                                     .frame(maxWidth: .infinity)
                                     .scaleEffect(isNewMessageButtonPressed ? 0.95 : 1.0)
@@ -192,7 +192,7 @@ struct ComposeView: View {
                         } else {
                             Image(systemName: "lock.fill")
                         }
-                        Text(isEncrypting ? "Encrypting..." : "Create Secure Message")
+                        Text(isEncrypting ? "Encrypting..." : "Create Safe Whisper")
                             .fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)

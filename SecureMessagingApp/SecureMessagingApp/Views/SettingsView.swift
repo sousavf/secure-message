@@ -27,28 +27,28 @@ struct SettingsView: View {
                         SecurityFeatureCard(
                             icon: "lock.shield.fill",
                             title: "End-to-End Encryption",
-                            description: "Messages are encrypted using AES-256-GCM before leaving your device. Encryption keys are never sent to the server.",
+                            description: "Whispers are encrypted using AES-256-GCM before leaving your device. Encryption keys are never sent to the server.",
                             iconColor: .green
                         )
                         
                         SecurityFeatureCard(
                             icon: "timer",
                             title: "One-Time Access",
-                            description: "Messages are automatically destroyed after being read once or after 24 hours.",
+                            description: "Whispers are automatically destroyed after being read once or after 24 hours.",
                             iconColor: .orange
                         )
                         
                         SecurityFeatureCard(
                             icon: "eye.slash.fill",
                             title: "Zero-Knowledge Architecture",
-                            description: "The server never has access to your message content or encryption keys.",
+                            description: "The server never has access to your whisper content or encryption keys.",
                             iconColor: .blue
                         )
                         
                         SecurityFeatureCard(
                             icon: "network.slash",
                             title: "No Data Collection",
-                            description: "We don't track, store, or analyze your personal data or messages.",
+                            description: "We don't track, store, or analyze your personal data or whispers.",
                             iconColor: .purple
                         )
                     }
@@ -62,14 +62,14 @@ struct SettingsView: View {
                         VStack(spacing: 12) {
                             HowItWorksStep(
                                 number: "1",
-                                title: "Write Message",
-                                description: "Type your secure message"
+                                title: "Write Whisper",
+                                description: "Type your safe whisper"
                             )
                             
                             HowItWorksStep(
                                 number: "2",
                                 title: "Encrypt & Upload",
-                                description: "Message is encrypted locally and uploaded"
+                                description: "Whisper is encrypted locally and uploaded"
                             )
                             
                             HowItWorksStep(
@@ -81,7 +81,7 @@ struct SettingsView: View {
                             HowItWorksStep(
                                 number: "4",
                                 title: "Read Once",
-                                description: "Message is decrypted and destroyed after reading"
+                                description: "Whisper is decrypted and destroyed after reading"
                             )
                         }
                     }

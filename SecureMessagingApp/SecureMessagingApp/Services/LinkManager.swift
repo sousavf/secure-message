@@ -81,7 +81,7 @@ enum LinkError: Error, LocalizedError {
         case .missingKey:
             return "No encryption key found in URL"
         case .invalidMessageID:
-            return "Invalid message ID in URL"
+            return "Invalid whisper ID in URL"
         case .invalidKey:
             return "Invalid encryption key format"
         }

@@ -70,9 +70,9 @@ enum NetworkError: Error, LocalizedError {
         case .serverError(let code):
             return "Server error: \(code)"
         case .messageConsumed:
-            return "This message has already been read"
+            return "This whisper has already been read"
         case .messageExpired:
-            return "This message has expired"
+            return "This whisper has expired"
         case .unknownError:
             return "An unknown error occurred"
         }

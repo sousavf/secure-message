@@ -22,11 +22,11 @@ struct ReceiveView: View {
                             .font(.system(size: 40))
                             .foregroundStyle(.indigo)
                         
-                        Text("Receive Secure Message")
+                        Text("Receive Safe Whisper")
                             .font(.title2)
                             .fontWeight(.semibold)
                         
-                        Text("Paste a secure message link to decrypt and read it")
+                        Text("Paste a safe whisper link to decrypt and read it")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -36,7 +36,7 @@ struct ReceiveView: View {
                     // Link Input Section
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Text("Message Link")
+                            Text("Whisper Link")
                                 .font(.headline)
                                 .foregroundStyle(.primary)
                             
@@ -112,7 +112,7 @@ struct ReceiveView: View {
                             HStack {
                                 Image(systemName: "checkmark.seal.fill")
                                     .foregroundStyle(.green)
-                                Text("Message Decrypted")
+                                Text("Whisper Decrypted")
                                     .font(.headline)
                                     .foregroundStyle(.green)
                                 Spacer()
@@ -138,7 +138,7 @@ struct ReceiveView: View {
                                 } label: {
                                     HStack {
                                         Image(systemName: "doc.on.doc")
-                                        Text("Copy Message")
+                                        Text("Copy Whisper")
                                     }
                                     .frame(maxWidth: .infinity)
                                 }
@@ -172,7 +172,7 @@ struct ReceiveView: View {
                         } else {
                             Image(systemName: "envelope.open.fill")
                         }
-                        Text(isProcessing ? "Decrypting..." : "Retrieve Message")
+                        Text(isProcessing ? "Decrypting..." : "Retrieve Whisper")
                             .fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
@@ -245,14 +245,14 @@ struct ReceiveView: View {
             } catch NetworkError.messageConsumed {
                 print("ReceiveView: Error - Message already consumed")
                 await MainActor.run {
-                    errorMessage = "This message has already been read and destroyed."
+                    errorMessage = "This whisper has already been read and destroyed."
                     showingError = true
                     isProcessing = false
                 }
             } catch NetworkError.messageExpired {
                 print("ReceiveView: Error - Message expired")
                 await MainActor.run {
-                    errorMessage = "This message has expired."
+                    errorMessage = "This whisper has expired."
                     showingError = true
                     isProcessing = false
                 }

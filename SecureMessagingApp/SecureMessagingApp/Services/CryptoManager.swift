@@ -78,13 +78,13 @@ enum CryptoError: Error, LocalizedError {
         case .invalidKey:
             return "Invalid encryption key"
         case .invalidMessage:
-            return "Invalid message format"
+            return "Invalid whisper format"
         case .invalidEncryptedData:
             return "Invalid encrypted data"
         case .encryptionFailed:
-            return "Failed to encrypt message"
+            return "Failed to encrypt whisper"
         case .decryptionFailed:
-            return "Failed to decrypt message"
+            return "Failed to decrypt whisper"
         }
     }
 }
