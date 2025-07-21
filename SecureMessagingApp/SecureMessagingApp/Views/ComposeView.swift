@@ -118,6 +118,19 @@ struct ComposeView: View {
                                     }
                                     .buttonStyle(.borderedProminent)
                                 }
+                                
+                                Button {
+                                    // Clear everything to start a new message
+                                    shareableLink = nil
+                                    messageText = ""
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "plus.circle")
+                                        Text("New Message")
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
                             }
                         }
                         .padding(16)
@@ -170,6 +183,12 @@ struct ComposeView: View {
             Button("OK") { }
         } message: {
             Text(errorMessage ?? "An error occurred")
+        }
+        .onChange(of: messageText) { _, newValue in
+            // Reset the shareable link when user starts typing a new message
+            if !newValue.isEmpty && shareableLink != nil {
+                shareableLink = nil
+            }
         }
     }
     
