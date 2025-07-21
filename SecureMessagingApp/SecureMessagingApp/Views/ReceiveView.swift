@@ -222,7 +222,6 @@ struct ReceiveView: View {
                     decryptedMessage = decrypted
                     isProcessing = false
                     linkText = ""
-                    CryptoManager.securelyErase(&linkText)
                 }
             } catch NetworkError.messageConsumed {
                 await MainActor.run {

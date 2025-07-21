@@ -81,6 +81,12 @@ public class MessageService {
             .orElse(true);
     }
 
+    public boolean messageExists(UUID messageId) {
+        return messageRepository.findById(messageId)
+            .map(message -> !message.isExpired())
+            .orElse(false);
+    }
+
     public StatsResponse getDailyStats(LocalDate date) {
         LocalDateTime dateTime = date.atStartOfDay();
         LocalDateTime now = LocalDateTime.now();

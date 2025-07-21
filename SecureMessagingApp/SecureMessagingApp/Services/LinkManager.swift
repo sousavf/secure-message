@@ -10,6 +10,11 @@ class LinkManager {
     
     func generateShareableLink(messageId: UUID, key: SymmetricKey) -> String {
         let keyString = CryptoManager.keyToBase64String(key)
+        return "\(baseURL)/messages/\(messageId.uuidString)/preview#\(keyString)"
+    }
+    
+    func generateDirectLink(messageId: UUID, key: SymmetricKey) -> String {
+        let keyString = CryptoManager.keyToBase64String(key)
         return "\(baseURL)/messages/\(messageId.uuidString)#\(keyString)"
     }
     
@@ -23,9 +28,23 @@ class LinkManager {
         }
         
         let pathComponents = url.pathComponents
-        guard pathComponents.count >= 3,
-              pathComponents[2] == "messages",
-              let messageId = UUID(uuidString: pathComponents[3]) else {
+        
+        // Handle both direct links and preview links
+        var messageIdString: String?
+        
+        if pathComponents.count >= 4 && pathComponents[2] == "messages" {
+            // Direct link: /api/messages/{id}
+            if pathComponents.count == 4 {
+                messageIdString = pathComponents[3]
+            }
+            // Preview link: /api/messages/{id}/preview
+            else if pathComponents.count == 5 && pathComponents[4] == "preview" {
+                messageIdString = pathComponents[3]
+            }
+        }
+        
+        guard let messageIdStr = messageIdString,
+              let messageId = UUID(uuidString: messageIdStr) else {
             throw LinkError.invalidMessageID
         }
         

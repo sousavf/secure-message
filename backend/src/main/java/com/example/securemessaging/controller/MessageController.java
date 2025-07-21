@@ -3,6 +3,7 @@ package com.example.securemessaging.controller;
 import com.example.securemessaging.dto.CreateMessageRequest;
 import com.example.securemessaging.dto.MessageResponse;
 import com.example.securemessaging.service.MessageService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +40,19 @@ public class MessageController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MessageResponse> getMessage(@PathVariable UUID id) {
+    public ResponseEntity<MessageResponse> getMessage(@PathVariable UUID id, HttpServletRequest request) {
         try {
+            // Handle HEAD requests (used by link previews) without consuming the message
+            if ("HEAD".equalsIgnoreCase(request.getMethod())) {
+                logger.info("Received HEAD request for message preview: {}", id);
+                boolean exists = messageService.messageExists(id);
+                if (exists) {
+                    return ResponseEntity.ok().build();
+                } else {
+                    return ResponseEntity.status(HttpStatus.GONE).build();
+                }
+            }
+            
             logger.info("Received request to retrieve message: {}", id);
             
             if (messageService.isMessageConsumed(id)) {
@@ -59,6 +71,61 @@ public class MessageController {
             logger.error("Error retrieving message: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+    
+    @RequestMapping(value = "/{id}/preview", method = {RequestMethod.GET, RequestMethod.HEAD})
+    public ResponseEntity<String> getMessagePreview(@PathVariable UUID id) {
+        try {
+            logger.info("Received preview request for message: {}", id);
+            
+            boolean exists = messageService.messageExists(id);
+            boolean consumed = messageService.isMessageConsumed(id);
+            
+            if (!exists || consumed) {
+                return ResponseEntity.status(HttpStatus.GONE)
+                    .body("This secure message is no longer available");
+            }
+            
+            // Return a safe preview that doesn't consume the message
+            return ResponseEntity.ok()
+                .header("Content-Type", "text/html")
+                .body(generatePreviewHtml(id));
+        } catch (Exception e) {
+            logger.error("Error generating preview for message: {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    private String generatePreviewHtml(UUID messageId) {
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Secure Message</title>
+                <meta name="description" content="You have received a secure, encrypted message that can only be read once.">
+                <meta property="og:title" content="Secure Message">
+                <meta property="og:description" content="You have received a secure, encrypted message that can only be read once.">
+                <meta property="og:type" content="website">
+                <meta name="twitter:card" content="summary">
+                <meta name="twitter:title" content="Secure Message">
+                <meta name="twitter:description" content="You have received a secure, encrypted message that can only be read once.">
+                <style>
+                    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                    .container { max-width: 500px; margin: 0 auto; }
+                    .icon { font-size: 48px; margin-bottom: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="icon">🔒</div>
+                    <h1>Secure Message</h1>
+                    <p>You have received a secure, encrypted message that can only be read once.</p>
+                    <p>Tap to open the message in the secure messaging app.</p>
+                </div>
+            </body>
+            </html>
+            """;
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
