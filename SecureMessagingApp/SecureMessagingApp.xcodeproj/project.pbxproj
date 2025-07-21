@@ -21,25 +21,8 @@
 		1A1A1A361A1A1A1A1A1A1A36 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1A1A351A1A1A1A1A1A1A35 /* Models.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		E19027752E2E2666002B45FC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1A1A1A0E1A1A1A1A1A1A1A0E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E19027652E2E2664002B45FC;
-			remoteInfo = "Safe Whisper";
-		};
-		E190277F2E2E2666002B45FC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1A1A1A0E1A1A1A1A1A1A1A0E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E19027652E2E2664002B45FC;
-			remoteInfo = "Safe Whisper";
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
-		1A1A1A161A1A1A1A1A1A1A16 /* SecureMessagingApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SecureMessagingApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A1A1A161A1A1A1A1A1A1A16 /* Safe Whisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Safe Whisper.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A1A1A191A1A1A1A1A1A1A19 /* SecureMessagingAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureMessagingAppApp.swift; sourceTree = "<group>"; };
 		1A1A1A1B1A1A1A1A1A1A1A1B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1A1A1A1D1A1A1A1A1A1A1A1D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -53,9 +36,6 @@
 		1A1A1A331A1A1A1A1A1A1A33 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1A1A1A351A1A1A1A1A1A1A35 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		1A1A1A371A1A1A1A1A1A1A37 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		E19027662E2E2664002B45FC /* Safe Whisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Safe Whisper.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		E19027742E2E2666002B45FC /* Safe WhisperTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Safe WhisperTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		E190277E2E2E2666002B45FC /* Safe WhisperUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Safe WhisperUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -66,27 +46,6 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		1A1A1A131A1A1A1A1A1A1A13 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E19027632E2E2664002B45FC /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E19027712E2E2666002B45FC /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E190277B2E2E2666002B45FC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -110,10 +69,7 @@
 		1A1A1A171A1A1A1A1A1A1A17 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1A1A1A161A1A1A1A1A1A1A16 /* SecureMessagingApp.app */,
-				E19027662E2E2664002B45FC /* Safe Whisper.app */,
-				E19027742E2E2666002B45FC /* Safe WhisperTests.xctest */,
-				E190277E2E2E2666002B45FC /* Safe WhisperUITests.xctest */,
+				1A1A1A161A1A1A1A1A1A1A16 /* Safe Whisper.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -165,9 +121,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1A1A1A151A1A1A1A1A1A1A15 /* SecureMessagingApp */ = {
+		1A1A1A151A1A1A1A1A1A1A15 /* Safe Whisper */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1A1A1A241A1A1A1A1A1A1A24 /* Build configuration list for PBXNativeTarget "SecureMessagingApp" */;
+			buildConfigurationList = 1A1A1A241A1A1A1A1A1A1A24 /* Build configuration list for PBXNativeTarget "Safe Whisper" */;
 			buildPhases = (
 				1A1A1A121A1A1A1A1A1A1A12 /* Sources */,
 				1A1A1A131A1A1A1A1A1A1A13 /* Frameworks */,
@@ -177,78 +133,10 @@
 			);
 			dependencies = (
 			);
-			name = SecureMessagingApp;
-			productName = SecureMessagingApp;
-			productReference = 1A1A1A161A1A1A1A1A1A1A16 /* SecureMessagingApp.app */;
-			productType = "com.apple.product-type.application";
-		};
-		E19027652E2E2664002B45FC /* Safe Whisper */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = E190278C2E2E2666002B45FC /* Build configuration list for PBXNativeTarget "Safe Whisper" */;
-			buildPhases = (
-				E19027622E2E2664002B45FC /* Sources */,
-				E19027632E2E2664002B45FC /* Frameworks */,
-				E19027642E2E2664002B45FC /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				E19027672E2E2664002B45FC /* Safe Whisper */,
-			);
 			name = "Safe Whisper";
-			packageProductDependencies = (
-			);
-			productName = "Safe Whisper";
-			productReference = E19027662E2E2664002B45FC /* Safe Whisper.app */;
+			productName = SecureMessagingApp;
+			productReference = 1A1A1A161A1A1A1A1A1A1A16 /* Safe Whisper.app */;
 			productType = "com.apple.product-type.application";
-		};
-		E19027732E2E2666002B45FC /* Safe WhisperTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = E190278D2E2E2666002B45FC /* Build configuration list for PBXNativeTarget "Safe WhisperTests" */;
-			buildPhases = (
-				E19027702E2E2666002B45FC /* Sources */,
-				E19027712E2E2666002B45FC /* Frameworks */,
-				E19027722E2E2666002B45FC /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				E19027762E2E2666002B45FC /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				E19027772E2E2666002B45FC /* Safe WhisperTests */,
-			);
-			name = "Safe WhisperTests";
-			packageProductDependencies = (
-			);
-			productName = "Safe WhisperTests";
-			productReference = E19027742E2E2666002B45FC /* Safe WhisperTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		E190277D2E2E2666002B45FC /* Safe WhisperUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = E190278E2E2E2666002B45FC /* Build configuration list for PBXNativeTarget "Safe WhisperUITests" */;
-			buildPhases = (
-				E190277A2E2E2666002B45FC /* Sources */,
-				E190277B2E2E2666002B45FC /* Frameworks */,
-				E190277C2E2E2666002B45FC /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				E19027802E2E2666002B45FC /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				E19027812E2E2666002B45FC /* Safe WhisperUITests */,
-			);
-			name = "Safe WhisperUITests";
-			packageProductDependencies = (
-			);
-			productName = "Safe WhisperUITests";
-			productReference = E190277E2E2E2666002B45FC /* Safe WhisperUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
@@ -262,17 +150,6 @@
 				TargetAttributes = {
 					1A1A1A151A1A1A1A1A1A1A15 = {
 						CreatedOnToolsVersion = 15.4;
-					};
-					E19027652E2E2664002B45FC = {
-						CreatedOnToolsVersion = 16.4;
-					};
-					E19027732E2E2666002B45FC = {
-						CreatedOnToolsVersion = 16.4;
-						TestTargetID = E19027652E2E2664002B45FC;
-					};
-					E190277D2E2E2666002B45FC = {
-						CreatedOnToolsVersion = 16.4;
-						TestTargetID = E19027652E2E2664002B45FC;
 					};
 				};
 			};
@@ -289,10 +166,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1A1A1A151A1A1A1A1A1A1A15 /* SecureMessagingApp */,
-				E19027652E2E2664002B45FC /* Safe Whisper */,
-				E19027732E2E2666002B45FC /* Safe WhisperTests */,
-				E190277D2E2E2666002B45FC /* Safe WhisperUITests */,
+				1A1A1A151A1A1A1A1A1A1A15 /* Safe Whisper */,
 			);
 		};
 /* End PBXProject section */
@@ -304,27 +178,6 @@
 			files = (
 				1A1A1A211A1A1A1A1A1A1A21 /* Preview Assets.xcassets in Resources */,
 				1A1A1A1E1A1A1A1A1A1A1A1E /* Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E19027642E2E2664002B45FC /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E19027722E2E2666002B45FC /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E190277C2E2E2666002B45FC /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -348,41 +201,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E19027622E2E2664002B45FC /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E19027702E2E2666002B45FC /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E190277A2E2E2666002B45FC /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		E19027762E2E2666002B45FC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E19027652E2E2664002B45FC /* Safe Whisper */;
-			targetProxy = E19027752E2E2666002B45FC /* PBXContainerItemProxy */;
-		};
-		E19027802E2E2666002B45FC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E19027652E2E2664002B45FC /* Safe Whisper */;
-			targetProxy = E190277F2E2E2666002B45FC /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		1A1A1A221A1A1A1A1A1A1A22 /* Debug */ = {
@@ -509,14 +328,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"SecureMessagingApp/Preview Content\"";
 				DEVELOPMENT_TEAM = RJ3GB6YDXL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SecureMessagingApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Secure Messaging";
+				INFOPLIST_KEY_CFBundleDisplayName = "Safe Whisper";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -528,11 +348,15 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = pt.sousavf.securemessaging.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = "pt.sousavf.Safe-Whisper";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -541,14 +365,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"SecureMessagingApp/Preview Content\"";
 				DEVELOPMENT_TEAM = RJ3GB6YDXL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SecureMessagingApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Secure Messaging";
+				INFOPLIST_KEY_CFBundleDisplayName = "Safe Whisper";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -560,145 +385,15 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = pt.sousavf.securemessaging.ios;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		E19027862E2E2666002B45FC /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = RJ3GB6YDXL;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Safe Whisper";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "pt.sousavf.Safe-Whisper";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		E19027872E2E2666002B45FC /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = RJ3GB6YDXL;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Safe Whisper";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "pt.sousavf.Safe-Whisper";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		E19027882E2E2666002B45FC /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = RJ3GB6YDXL;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "pt.sousavf.Safe-WhisperTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Safe Whisper.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Safe Whisper";
-			};
-			name = Debug;
-		};
-		E19027892E2E2666002B45FC /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = RJ3GB6YDXL;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "pt.sousavf.Safe-WhisperTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Safe Whisper.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Safe Whisper";
-			};
-			name = Release;
-		};
-		E190278A2E2E2666002B45FC /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = RJ3GB6YDXL;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "pt.sousavf.Safe-WhisperUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = "Safe Whisper";
-			};
-			name = Debug;
-		};
-		E190278B2E2E2666002B45FC /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = RJ3GB6YDXL;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "pt.sousavf.Safe-WhisperUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = "Safe Whisper";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -714,38 +409,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1A1A1A241A1A1A1A1A1A1A24 /* Build configuration list for PBXNativeTarget "SecureMessagingApp" */ = {
+		1A1A1A241A1A1A1A1A1A1A24 /* Build configuration list for PBXNativeTarget "Safe Whisper" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1A1A1A251A1A1A1A1A1A1A25 /* Debug */,
 				1A1A1A261A1A1A1A1A1A1A26 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		E190278C2E2E2666002B45FC /* Build configuration list for PBXNativeTarget "Safe Whisper" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				E19027862E2E2666002B45FC /* Debug */,
-				E19027872E2E2666002B45FC /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		E190278D2E2E2666002B45FC /* Build configuration list for PBXNativeTarget "Safe WhisperTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				E19027882E2E2666002B45FC /* Debug */,
-				E19027892E2E2666002B45FC /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		E190278E2E2E2666002B45FC /* Build configuration list for PBXNativeTarget "Safe WhisperUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				E190278A2E2E2666002B45FC /* Debug */,
-				E190278B2E2E2666002B45FC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

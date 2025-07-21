@@ -1,0 +1,61 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="whisperGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="url(#whisperGradient)" opacity="0.1"/>
+  
+  <!-- Lock shield shape -->
+  <path d="M100 30 C120 30, 140 45, 140 70 L140 85 L145 85 C150 85, 155 90, 155 95 L155 150 C155 160, 150 165, 140 165 L60 165 C50 165, 45 160, 45 150 L45 95 C45 90, 50 85, 60 85 L65 85 L65 70 C65 45, 80 30, 100 30 Z" 
+        fill="url(#whisperGradient)" 
+        filter="url(#glow)" 
+        opacity="0.9"/>
+  
+  <!-- Lock body -->
+  <rect x="55" y="90" width="90" height="70" rx="8" ry="8" 
+        fill="url(#whisperGradient)" 
+        stroke="#ffffff" 
+        stroke-width="2"/>
+  
+  <!-- Lock shackle -->
+  <path d="M75 90 L75 70 C75 55, 85 45, 100 45 C115 45, 125 55, 125 70 L125 90" 
+        fill="none" 
+        stroke="url(#whisperGradient)" 
+        stroke-width="6" 
+        stroke-linecap="round"/>
+  
+  <!-- Keyhole -->
+  <circle cx="100" cy="115" r="8" fill="#ffffff" opacity="0.9"/>
+  <rect x="96" y="115" width="8" height="15" rx="2" fill="#ffffff" opacity="0.9"/>
+  
+  <!-- Sound waves (whisper effect) -->
+  <path d="M160 85 Q170 100, 160 115" 
+        fill="none" 
+        stroke="url(#whisperGradient)" 
+        stroke-width="3" 
+        stroke-linecap="round" 
+        opacity="0.6"/>
+  <path d="M165 90 Q172 100, 165 110" 
+        fill="none" 
+        stroke="url(#whisperGradient)" 
+        stroke-width="2" 
+        stroke-linecap="round" 
+        opacity="0.4"/>
+  <path d="M170 95 Q175 100, 170 105" 
+        fill="none" 
+        stroke="url(#whisperGradient)" 
+        stroke-width="2" 
+        stroke-linecap="round" 
+        opacity="0.3"/>
+</svg>
