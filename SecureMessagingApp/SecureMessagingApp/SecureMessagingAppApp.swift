@@ -12,18 +12,17 @@ struct SecureMessagingAppApp: App {
     }
     
     func handleIncomingURL(_ url: URL) {
-        guard url.scheme == "securemsg" else { return }
+        guard url.scheme == "https" && url.host == "whisper.stratholme.eu" else { return }
         
-        if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-           let messageId = components.path.components(separatedBy: "/").last,
-           let fragment = components.fragment {
-            
-            let fullURL = "https://whisper.stratholme.eu/api/messages/\(messageId)#\(fragment)"
-            
-            NotificationCenter.default.post(
-                name: NSNotification.Name("HandleSecureMessageURL"),
-                object: fullURL
-            )
-        }
+        let pathComponents = url.pathComponents
+        guard pathComponents.count >= 3,
+              pathComponents[1] == "api",
+              pathComponents[2] == "messages",
+              url.fragment != nil else { return }
+        
+        NotificationCenter.default.post(
+            name: NSNotification.Name("HandleSecureMessageURL"),
+            object: url.absoluteString
+        )
     }
 }

@@ -58,12 +58,15 @@ class APIService: ObservableObject {
     
     func retrieveMessage(id: UUID) async throws -> EncryptedMessage {
         let urlRequest = try createRequest(for: "/\(id.uuidString)")
+        print(urlRequest)
         
         let (data, response) = try await session.data(for: urlRequest)
+        print(response)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.unknownError
         }
+        print(httpResponse.statusCode)
         
         switch httpResponse.statusCode {
         case 200:
