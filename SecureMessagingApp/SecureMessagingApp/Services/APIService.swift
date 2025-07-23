@@ -1,6 +1,8 @@
 import Foundation
 
 class APIService: ObservableObject {
+    static let shared = APIService()
+    
     private let baseURL: String
     private let session: URLSession
     
@@ -27,7 +29,7 @@ class APIService: ObservableObject {
         return request
     }
     
-    func createMessage(_ encryptedMessage: EncryptedMessage) async throws -> UUID {
+    func createMessage(_ encryptedMessage: EncryptedMessage, deviceId: String? = nil) async throws -> UUID {
         let request = CreateMessageRequest(
             ciphertext: encryptedMessage.ciphertext,
             nonce: encryptedMessage.nonce,
@@ -35,6 +37,12 @@ class APIService: ObservableObject {
         )
         
         var urlRequest = try createRequest(for: "", method: "POST")
+        
+        // Add device ID header if provided
+        if let deviceId = deviceId {
+            urlRequest.setValue(deviceId, forHTTPHeaderField: "X-Device-ID")
+        }
+        
         urlRequest.httpBody = try JSONEncoder().encode(request)
         
         let (data, response) = try await session.data(for: urlRequest)
@@ -47,6 +55,9 @@ class APIService: ObservableObject {
         case 201:
             let messageResponse = try JSONDecoder().decode(MessageResponse.self, from: data)
             return messageResponse.id
+        case 413: // Payload Too Large
+            let errorMessage = httpResponse.value(forHTTPHeaderField: "X-Error-Message") ?? "Message too large. Upgrade to premium for 10MB messages."
+            throw NetworkError.messageTooLarge(errorMessage)
         case 400...499:
             throw NetworkError.serverError(httpResponse.statusCode)
         case 500...599:
@@ -135,4 +146,70 @@ class APIService: ObservableObject {
             throw NetworkError.unknownError
         }
     }
+    
+    // MARK: - Subscription Methods
+    
+    func verifySubscription(deviceId: String, receiptData: String) async {
+        do {
+            let requestBody = [
+                "deviceId": deviceId,
+                "receiptData": receiptData
+            ]
+            
+            var urlRequest = try createRequest(for: "/api/subscription/verify", method: "POST")
+            urlRequest.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+            
+            let (_, response) = try await session.data(for: urlRequest)
+            
+            if let httpResponse = response as? HTTPURLResponse,
+               httpResponse.statusCode == 200 {
+                print("Subscription verified successfully")
+            } else {
+                print("Subscription verification failed")
+            }
+        } catch {
+            print("Error verifying subscription: \(error)")
+        }
+    }
+    
+    func checkSubscriptionStatus(deviceId: String) async {
+        do {
+            let urlRequest = try createRequest(for: "/api/subscription/status/\(deviceId)")
+            
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            if let httpResponse = response as? HTTPURLResponse,
+               httpResponse.statusCode == 200 {
+                // Handle subscription status response
+                print("Subscription status checked successfully")
+            }
+        } catch {
+            print("Error checking subscription status: \(error)")
+        }
+    }
+    
+    func getSubscriptionLimits(deviceId: String) async -> SubscriptionLimits? {
+        do {
+            let urlRequest = try createRequest(for: "/api/subscription/limits/\(deviceId)")
+            
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            if let httpResponse = response as? HTTPURLResponse,
+               httpResponse.statusCode == 200 {
+                return try JSONDecoder().decode(SubscriptionLimits.self, from: data)
+            }
+        } catch {
+            print("Error fetching subscription limits: \(error)")
+        }
+        return nil
+    }
+}
+
+// MARK: - Subscription Models
+
+struct SubscriptionLimits: Codable {
+    let maxMessageSizeBytes: Int64
+    let maxMessageSizeMB: Double
+    let canSendLargeMessage: Bool
+    let isPremium: Bool
 }

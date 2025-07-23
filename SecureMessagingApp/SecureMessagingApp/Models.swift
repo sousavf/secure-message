@@ -50,6 +50,12 @@ struct APIError: Error, LocalizedError {
     }
 }
 
+struct MessageContent: Codable {
+    let text: String?
+    let image: String?
+    let imageType: String?
+}
+
 enum NetworkError: Error, LocalizedError {
     case invalidURL
     case noData
@@ -57,6 +63,7 @@ enum NetworkError: Error, LocalizedError {
     case serverError(Int)
     case messageConsumed
     case messageExpired
+    case messageTooLarge(String)
     case unknownError
     
     var errorDescription: String? {
@@ -73,6 +80,8 @@ enum NetworkError: Error, LocalizedError {
             return "This whisper has already been read"
         case .messageExpired:
             return "This whisper has expired"
+        case .messageTooLarge(let message):
+            return message
         case .unknownError:
             return "An unknown error occurred"
         }

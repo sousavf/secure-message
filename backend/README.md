@@ -1,4 +1,4 @@
-# Secure Messaging Backend
+# Safe Whisper Backend
 
 A zero-knowledge, one-time encrypted messaging system built with Spring Boot 3.x that provides secure message storage and retrieval with automatic expiration.
 

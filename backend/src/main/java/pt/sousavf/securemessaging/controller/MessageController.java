@@ -27,11 +27,18 @@ public class MessageController {
     }
 
     @PostMapping
-    public ResponseEntity<MessageResponse> createMessage(@Valid @RequestBody CreateMessageRequest request) {
+    public ResponseEntity<MessageResponse> createMessage(
+            @Valid @RequestBody CreateMessageRequest request,
+            @RequestHeader(value = "X-Device-ID", required = false) String deviceId) {
         try {
-            logger.info("Received request to create message");
-            MessageResponse response = messageService.createMessage(request);
+            logger.info("Received request to create message from device: {}", deviceId);
+            MessageResponse response = messageService.createMessage(request, deviceId);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Message size limit exceeded: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                               .header("X-Error-Message", e.getMessage())
+                               .build();
         } catch (Exception e) {
             logger.error("Error creating message", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

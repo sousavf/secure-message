@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
+    @State private var showingSubscriptionView = false
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -21,6 +24,67 @@ struct SettingsView: View {
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top)
+                    
+                    // Subscription Section
+                    VStack(spacing: 16) {
+                        Text("Subscription")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        VStack(spacing: 12) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Current Plan")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.primary)
+                                    
+                                    Text(subscriptionManager.subscriptionStatus.displayName)
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(subscriptionManager.subscriptionStatus == .premium ? .green : .secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Button("Manage") {
+                                    showingSubscriptionView = true
+                                } label: {
+                                    Text("Manage")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                            
+                            if subscriptionManager.subscriptionStatus == .premium {
+                                HStack {
+                                    Image(systemName: "crown.fill")
+                                        .foregroundColor(.yellow)
+                                    
+                                    Text("Premium features active - Send images up to 10MB")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    
+                                    Spacer()
+                                }
+                            } else {
+                                HStack {
+                                    Image(systemName: "photo")
+                                        .foregroundColor(.gray)
+                                    
+                                    Text("Upgrade to Premium for 10MB image sharing")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                    .padding(16)
+                    .background(Color(.systemGray6).opacity(0.3))
+                    .cornerRadius(12)
                     
                     // Security Features
                     VStack(spacing: 16) {
@@ -129,6 +193,12 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
+        }
+        .sheet(isPresented: $showingSubscriptionView) {
+            SubscriptionView()
+        }
+        .task {
+            await subscriptionManager.updateSubscriptionStatus()
         }
     }
 }

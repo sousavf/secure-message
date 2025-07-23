@@ -24,16 +24,34 @@ public class MessageService {
     private static final Logger logger = LoggerFactory.getLogger(MessageService.class);
 
     private final MessageRepository messageRepository;
+    private final SubscriptionService subscriptionService;
     
     @Value("${app.message.default-ttl-hours:24}")
     private int defaultTtlHours;
 
-    public MessageService(MessageRepository messageRepository) {
+    public MessageService(MessageRepository messageRepository, SubscriptionService subscriptionService) {
         this.messageRepository = messageRepository;
+        this.subscriptionService = subscriptionService;
     }
 
     public MessageResponse createMessage(CreateMessageRequest request) {
+        return createMessage(request, null);
+    }
+
+    public MessageResponse createMessage(CreateMessageRequest request, String senderDeviceId) {
         logger.info("Creating new message");
+        
+        // Check message size limits if sender device ID is provided
+        if (senderDeviceId != null) {
+            long maxSize = subscriptionService.getMaxMessageSize(senderDeviceId);
+            long messageSize = estimateMessageSize(request);
+            
+            if (messageSize > maxSize) {
+                throw new IllegalArgumentException(
+                    String.format("Message size (%d bytes) exceeds limit (%d bytes). Upgrade to premium for 10MB messages.", 
+                                messageSize, maxSize));
+            }
+        }
         
         LocalDateTime expiresAt = LocalDateTime.now().plusHours(defaultTtlHours);
         
@@ -44,10 +62,29 @@ public class MessageService {
             expiresAt
         );
         
+        if (senderDeviceId != null) {
+            message.setSenderDeviceId(senderDeviceId);
+        }
+        
         Message savedMessage = messageRepository.save(message);
-        logger.info("Message created with ID: {}", savedMessage.getId());
+        logger.info("Message created with ID: {}, size: {} bytes", savedMessage.getId(), estimateMessageSize(request));
         
         return MessageResponse.createResponse(savedMessage.getId());
+    }
+
+    private long estimateMessageSize(CreateMessageRequest request) {
+        // Rough estimation based on the ciphertext, nonce, and tag sizes
+        long size = 0;
+        if (request.getCiphertext() != null) {
+            size += request.getCiphertext().length();
+        }
+        if (request.getNonce() != null) {
+            size += request.getNonce().length();
+        }
+        if (request.getTag() != null) {
+            size += request.getTag().length();
+        }
+        return size;
     }
 
     @Transactional

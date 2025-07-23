@@ -46,6 +46,9 @@ app:
   message:
     default-ttl-hours: 24
     cleanup-interval-minutes: 60
+  subscription:
+    app-shared-secret: ${APP_SHARED_SECRET:your-app-shared-secret}
+    sandbox: ${SUBSCRIPTION_SANDBOX:true}
   security:
     cors:
       allowed-origins: 

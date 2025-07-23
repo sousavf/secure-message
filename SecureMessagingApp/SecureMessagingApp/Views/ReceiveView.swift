@@ -4,6 +4,7 @@ import CryptoKit
 struct ReceiveView: View {
     @State private var linkText = ""
     @State private var decryptedMessage: String?
+    @State private var decryptedImage: UIImage?
     @State private var isProcessing = false
     @State private var errorMessage: String?
     @State private var showingError = false
@@ -106,8 +107,7 @@ struct ReceiveView: View {
                     }
                     
                     // Decrypted Message Section
-                    if let message = decryptedMessage {
-                        let _ = print("ReceiveView: Rendering decrypted message UI with content: '\(message)'")
+                    if decryptedMessage != nil || decryptedImage != nil {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
                                 Image(systemName: "checkmark.seal.fill")
@@ -119,30 +119,63 @@ struct ReceiveView: View {
                             }
                             
                             VStack(spacing: 12) {
-                                ScrollView {
-                                    Text(message)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(16)
-                                        .background(Color(.systemGray6))
-                                        .cornerRadius(12)
-                                        .font(.body)
-                                        .textSelection(.enabled)
-                                }
-                                .frame(maxHeight: 200)
-                                
-                                Button {
-                                    UIPasteboard.general.string = message
-                                    // Add haptic feedback
-                                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                                    impactFeedback.impactOccurred()
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "doc.on.doc")
-                                        Text("Copy Whisper")
+                                // Text content
+                                if let message = decryptedMessage, !message.isEmpty {
+                                    ScrollView {
+                                        Text(message)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(16)
+                                            .background(Color(.systemGray6))
+                                            .cornerRadius(12)
+                                            .font(.body)
+                                            .textSelection(.enabled)
                                     }
-                                    .frame(maxWidth: .infinity)
+                                    .frame(maxHeight: 200)
                                 }
-                                .buttonStyle(.bordered)
+                                
+                                // Image content
+                                if let image = decryptedImage {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(maxHeight: 300)
+                                        .cornerRadius(12)
+                                        .clipped()
+                                }
+                                
+                                HStack(spacing: 12) {
+                                    // Copy text button
+                                    if let message = decryptedMessage, !message.isEmpty {
+                                        Button {
+                                            UIPasteboard.general.string = message
+                                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                            impactFeedback.impactOccurred()
+                                        } label: {
+                                            HStack {
+                                                Image(systemName: "doc.on.doc")
+                                                Text("Copy Text")
+                                            }
+                                            .frame(maxWidth: .infinity)
+                                        }
+                                        .buttonStyle(.bordered)
+                                    }
+                                    
+                                    // Save image button
+                                    if let image = decryptedImage {
+                                        Button {
+                                            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                            impactFeedback.impactOccurred()
+                                        } label: {
+                                            HStack {
+                                                Image(systemName: "square.and.arrow.down")
+                                                Text("Save Image")
+                                            }
+                                            .frame(maxWidth: .infinity)
+                                        }
+                                        .buttonStyle(.bordered)
+                                    }
+                                }
                             }
                         }
                         .padding(16)
@@ -196,9 +229,10 @@ struct ReceiveView: View {
         .onChange(of: linkText) { oldValue, newValue in
             // Only clear decrypted message if user is actively changing the link text
             // Don't clear it if we're just clearing the text after successful decryption
-            if !oldValue.isEmpty && !newValue.isEmpty && decryptedMessage != nil {
-                print("ReceiveView: User changed link text, clearing decrypted message")
+            if !oldValue.isEmpty && !newValue.isEmpty && (decryptedMessage != nil || decryptedImage != nil) {
+                print("ReceiveView: User changed link text, clearing decrypted content")
                 decryptedMessage = nil
+                decryptedImage = nil
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("HandleSecureMessageURL"))) { notification in
@@ -225,6 +259,7 @@ struct ReceiveView: View {
         print("ReceiveView: Starting to process link: \(linkText)")
         isProcessing = true
         decryptedMessage = nil
+        decryptedImage = nil
         
         Task {
             do {
@@ -240,12 +275,33 @@ struct ReceiveView: View {
                 let decrypted = try CryptoManager.decrypt(encryptedMessage: encryptedMessage, key: parsedLink.key)
                 print("ReceiveView: Message decrypted successfully. Length: \(decrypted.count) characters")
                 
-                await MainActor.run {
-                    print("ReceiveView: Setting decrypted message in UI")
-                    decryptedMessage = decrypted
-                    isProcessing = false
-                    // Don't clear linkText immediately to avoid triggering onChange
-                    print("ReceiveView: UI updated with decrypted message")
+                // Try to parse as MessageContent (JSON with image)
+                if let data = decrypted.data(using: .utf8),
+                   let messageContent = try? JSONDecoder().decode(MessageContent.self, from: data) {
+                    
+                    // This is a structured message with possible image
+                    await MainActor.run {
+                        print("ReceiveView: Setting structured message content in UI")
+                        decryptedMessage = messageContent.text
+                        
+                        // Decode image if present
+                        if let imageBase64 = messageContent.image,
+                           let imageData = Data(base64Encoded: imageBase64),
+                           let image = UIImage(data: imageData) {
+                            decryptedImage = image
+                        }
+                        
+                        isProcessing = false
+                        print("ReceiveView: UI updated with structured message content")
+                    }
+                } else {
+                    // Plain text message
+                    await MainActor.run {
+                        print("ReceiveView: Setting plain text message in UI")
+                        decryptedMessage = decrypted
+                        isProcessing = false
+                        print("ReceiveView: UI updated with plain text message")
+                    }
                 }
             } catch NetworkError.messageConsumed {
                 print("ReceiveView: Error - Message already consumed")
@@ -270,6 +326,11 @@ struct ReceiveView: View {
                 }
             }
         }
+    }
+    
+    private func clearDecryptedContent() {
+        decryptedMessage = nil
+        decryptedImage = nil
     }
 }
 

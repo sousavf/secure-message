@@ -23,7 +23,7 @@ public class Message {
     private UUID id;
 
     @NotBlank(message = "Ciphertext cannot be blank")
-    @Size(max = 100000, message = "Ciphertext too large")
+    @Size(max = 15000000, message = "Ciphertext too large") // ~15MB to account for base64 encoding overhead
     @Column(name = "ciphertext", nullable = false, columnDefinition = "TEXT")
     private String ciphertext;
 
@@ -49,6 +49,9 @@ public class Message {
 
     @Column(name = "consumed", nullable = false)
     private boolean consumed = false;
+
+    @Column(name = "sender_device_id")
+    private String senderDeviceId;
 
     public Message() {}
 
@@ -130,5 +133,13 @@ public class Message {
 
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiresAt);
+    }
+
+    public String getSenderDeviceId() {
+        return senderDeviceId;
+    }
+
+    public void setSenderDeviceId(String senderDeviceId) {
+        this.senderDeviceId = senderDeviceId;
     }
 }

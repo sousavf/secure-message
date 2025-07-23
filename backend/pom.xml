@@ -16,8 +16,8 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Secure Messaging Backend</name>
-    <description>Zero-knowledge messaging backend with Spring Boot</description>
+    <name>Safe Whisper Backend</name>
+    <description>Safe Whisper - Zero-knowledge messaging backend with Spring Boot</description>
 
     <properties>
         <java.version>17</java.version>
