@@ -1,15 +1,16 @@
 #!/bin/bash
 
-# Deploy Safe Whisper Backend to Docker Hub (Private Repository)
-# Usage: ./deploy-to-dockerhub.sh [version] [dockerhub-username]
+# Deploy Safe Whisper Backend to Private Docker Registry
+# Usage: ./deploy-to-dockerhub.sh [version] [username]
 
 set -e  # Exit on any error
 
 # Configuration
 VERSION=${1:-"latest"}
-DOCKERHUB_USERNAME=${2:-"sousavf"}
+USERNAME=${2:-"admin"}
+REGISTRY_URL="registry.vascosousa.com"
 IMAGE_NAME="safe-whisper-backend"
-FULL_IMAGE_TAG="${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${VERSION}"
+FULL_IMAGE_TAG="${REGISTRY_URL}/${USERNAME}/${IMAGE_NAME}:${VERSION}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -43,14 +44,15 @@ fi
 
 print_status "Starting deployment process..."
 print_status "Image: ${FULL_IMAGE_TAG}"
-print_status "This will create a PRIVATE repository on Docker Hub"
+print_status "This will push to your private registry at ${REGISTRY_URL}"
 
-# Check if user is logged in to Docker Hub
-if ! docker info | grep -q "Username"; then
-    print_warning "You need to log in to Docker Hub first."
-    echo "Please run: docker login"
-    echo "Enter your Docker Hub credentials when prompted."
-    docker login
+# Check if user is logged in to the private registry
+print_status "Checking registry authentication..."
+if ! docker system info | grep -q "${REGISTRY_URL}" 2>/dev/null; then
+    print_warning "You need to log in to your private registry first."
+    echo "Please run: docker login ${REGISTRY_URL}"
+    echo "Enter your registry credentials when prompted."
+    docker login "${REGISTRY_URL}"
 fi
 
 # Navigate to the backend directory
@@ -77,20 +79,20 @@ print_success "Docker image built successfully!"
 # Tag the image as latest if not already
 if [ "${VERSION}" != "latest" ]; then
     print_status "Creating 'latest' tag..."
-    docker tag "${FULL_IMAGE_TAG}" "${DOCKERHUB_USERNAME}/${IMAGE_NAME}:latest"
+    docker tag "${FULL_IMAGE_TAG}" "${REGISTRY_URL}/${USERNAME}/${IMAGE_NAME}:latest"
 fi
 
-print_status "Pushing image to Docker Hub (this may take a few minutes)..."
+print_status "Pushing image to private registry (this may take a few minutes)..."
 
-# Push to Docker Hub
+# Push to private registry
 docker push "${FULL_IMAGE_TAG}"
 
 # Push latest tag if created
 if [ "${VERSION}" != "latest" ]; then
-    docker push "${DOCKERHUB_USERNAME}/${IMAGE_NAME}:latest"
+    docker push "${REGISTRY_URL}/${USERNAME}/${IMAGE_NAME}:latest"
 fi
 
-print_success "Image pushed to Docker Hub successfully!"
+print_success "Image pushed to private registry successfully!"
 
 # Create production docker-compose file
 print_status "Creating production docker-compose file..."
@@ -206,13 +208,11 @@ echo ""
 print_status "To deploy on a production server:"
 print_status "  1. Copy docker-compose.prod.yml and .env.prod.example to your server"
 print_status "  2. Create .env.prod from .env.prod.example with your actual values"
-print_status "  3. Run: docker login (on the production server)"
+print_status "  3. Run: docker login ${REGISTRY_URL} (on the production server)"
 print_status "  4. Run: docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d"
 echo ""
-print_status "To make the repository private on Docker Hub:"
-print_status "  1. Go to https://hub.docker.com/repository/docker/${DOCKERHUB_USERNAME}/${IMAGE_NAME}"
-print_status "  2. Click 'Settings' tab"
-print_status "  3. Change visibility to 'Private'"
+print_status "Your image is stored in your private registry at:"
+print_status "  🏠 ${REGISTRY_URL}/${USERNAME}/${IMAGE_NAME}"
 echo ""
 print_warning "Remember to update your production environment variables!"
 
@@ -223,7 +223,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     print_status "Cleaning up local images..."
     docker rmi "${FULL_IMAGE_TAG}" || true
     if [ "${VERSION}" != "latest" ]; then
-        docker rmi "${DOCKERHUB_USERNAME}/${IMAGE_NAME}:latest" || true
+        docker rmi "${REGISTRY_URL}/${USERNAME}/${IMAGE_NAME}:latest" || true
     fi
     print_success "Local images cleaned up!"
 fi
