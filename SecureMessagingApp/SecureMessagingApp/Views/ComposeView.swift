@@ -14,7 +14,20 @@ struct ComposeView: View {
     @State private var isNewMessageButtonPressed = false
     @State private var showingImagePicker = false
     @State private var showingSubscriptionView = false
+    @State private var selectedTTLMinutes: Int = 1440 // Default: 24 hours
     @FocusState private var isTextEditorFocused: Bool
+
+    // TTL options: 5 min, 15 min, 30 min, 1h, 6h, 12h, 24h, 48h
+    private let ttlOptions: [(minutes: Int, label: String)] = [
+        (5, "5 minutes"),
+        (15, "15 minutes"),
+        (30, "30 minutes"),
+        (60, "1 hour"),
+        (360, "6 hours"),
+        (720, "12 hours"),
+        (1440, "24 hours"),
+        (2880, "48 hours")
+    ]
     
     @StateObject private var apiService = APIService()
     @StateObject private var subscriptionManager = SubscriptionManager.shared
@@ -120,7 +133,35 @@ struct ComposeView: View {
                             .cornerRadius(8)
                         }
                     }
-                    
+
+                    // TTL Selection Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "clock")
+                                .foregroundColor(.indigo)
+                            Text("Message Lifetime")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+
+                            Spacer()
+                        }
+
+                        Text("Choose how long your whisper will be available")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Picker("TTL", selection: $selectedTTLMinutes) {
+                            ForEach(ttlOptions, id: \.minutes) { option in
+                                Text(option.label).tag(option.minutes)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.indigo)
+                    }
+                    .padding(16)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+
                     // Generated Link Section
                     if let link = shareableLink {
                         VStack(alignment: .leading, spacing: 16) {
@@ -188,12 +229,13 @@ struct ComposeView: View {
                                     withAnimation(.easeInOut(duration: 0.1)) {
                                         isNewMessageButtonPressed = true
                                     }
-                                    
+
                                     // Clear everything to start a new message
                                     shareableLink = nil
                                     messageText = ""
                                     selectedImage = nil
-                                    
+                                    selectedTTLMinutes = 1440 // Reset to default 24 hours
+
                                     // Reset visual feedback
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                         withAnimation(.easeInOut(duration: 0.1)) {
@@ -342,9 +384,9 @@ struct ComposeView: View {
                 
                 let encryptedMessage = try CryptoManager.encrypt(message: contentToEncrypt, key: key)
                 
-                // Get device ID and send with message
+                // Get device ID and send with message including TTL
                 let deviceId = await DeviceIdentifierManager.shared.getDeviceId()
-                let messageId = try await apiService.createMessage(encryptedMessage, deviceId: deviceId)
+                let messageId = try await apiService.createMessage(encryptedMessage, deviceId: deviceId, ttlMinutes: selectedTTLMinutes)
                 
                 let link = linkManager.generateShareableLink(messageId: messageId, key: key)
                 

@@ -10,6 +10,7 @@ struct CreateMessageRequest: Codable {
     let ciphertext: String
     let nonce: String
     let tag: String
+    let ttlMinutes: Int?
 }
 
 struct MessageResponse: Codable {

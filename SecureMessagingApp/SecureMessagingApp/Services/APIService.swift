@@ -29,11 +29,12 @@ class APIService: ObservableObject {
         return request
     }
     
-    func createMessage(_ encryptedMessage: EncryptedMessage, deviceId: String? = nil) async throws -> UUID {
+    func createMessage(_ encryptedMessage: EncryptedMessage, deviceId: String? = nil, ttlMinutes: Int? = nil) async throws -> UUID {
         let request = CreateMessageRequest(
             ciphertext: encryptedMessage.ciphertext,
             nonce: encryptedMessage.nonce,
-            tag: encryptedMessage.tag
+            tag: encryptedMessage.tag,
+            ttlMinutes: ttlMinutes
         )
         
         var urlRequest = try createRequest(for: "", method: "POST")

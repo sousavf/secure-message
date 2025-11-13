@@ -45,6 +45,8 @@ logging:
 app:
   message:
     default-ttl-hours: 24
+    min-ttl-minutes: 5         # Minimum TTL: 5 minutes
+    max-ttl-minutes: 2880      # Maximum TTL: 48 hours (2880 minutes)
     cleanup-interval-minutes: 60
   subscription:
     app-shared-secret: ${APP_SHARED_SECRET:your-app-shared-secret}
