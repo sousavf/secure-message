@@ -12,14 +12,14 @@ struct MainView: View {
                     Text("Compose")
                 }
                 .tag(0)
-            
+
             ReceiveView()
                 .tabItem {
                     Image(systemName: "envelope.open.fill")
                     Text("Receive")
                 }
                 .tag(1)
-            
+
             SettingsView()
                 .tabItem {
                     Image(systemName: "gear")
@@ -37,6 +37,7 @@ struct MainView: View {
             // Switch to Receive tab when Universal Link is handled
             selectedTab = 1
         }
+        .preventScreenshot() // Enable screenshot and screen recording prevention
     }
 }
 
