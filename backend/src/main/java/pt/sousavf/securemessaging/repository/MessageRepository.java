@@ -40,4 +40,28 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
 
     @Query("SELECT COUNT(m) FROM Message m WHERE m.consumed = true")
     long countConsumedMessages();
+
+    /**
+     * Find all messages for a conversation
+     */
+    List<Message> findByConversationId(UUID conversationId);
+
+    /**
+     * Find all active messages for a conversation
+     */
+    @Query("SELECT m FROM Message m WHERE m.conversationId = :conversationId AND m.expiresAt > CURRENT_TIMESTAMP ORDER BY m.createdAt ASC")
+    List<Message> findActiveByConversationId(@Param("conversationId") UUID conversationId);
+
+    /**
+     * Delete all messages for a conversation
+     */
+    @Modifying
+    @Query("DELETE FROM Message m WHERE m.conversationId = :conversationId")
+    int deleteByConversationId(@Param("conversationId") UUID conversationId);
+
+    /**
+     * Count active messages in a conversation
+     */
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.conversationId = :conversationId AND m.expiresAt > CURRENT_TIMESTAMP")
+    long countActiveByConversationId(@Param("conversationId") UUID conversationId);
 }

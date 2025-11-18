@@ -1,15 +1,15 @@
 server:
-  port: 8080
+  port: 8687
   servlet:
     context-path: /
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/secure_messaging}
-    username: ${DB_USERNAME:secure_user}
-    password: ${DB_PASSWORD:secure_password}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/privileged_messaging}
+    username: ${DB_USERNAME:privileged_user}
+    password: ${DB_PASSWORD:privileged_password}
     driver-class-name: org.postgresql.Driver
-    
+
   jpa:
     hibernate:
       ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:create-drop}
@@ -21,9 +21,19 @@ spring:
     
   jackson:
     default-property-inclusion: NON_NULL
-    
+
   security:
     require-ssl: false
+
+# SpringDoc OpenAPI configuration
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
 
 management:
   endpoints:
@@ -46,15 +56,17 @@ app:
   message:
     default-ttl-hours: 24
     cleanup-interval-minutes: 60
+  share:
+    base-url: ${APP_SHARE_BASE_URL:http://10.10.0.176:8687}
   subscription:
     app-shared-secret: ${APP_SHARED_SECRET:your-app-shared-secret}
     sandbox: ${SUBSCRIPTION_SANDBOX:true}
   security:
     cors:
-      allowed-origins: 
+      allowed-origins:
         - "http://localhost:3000"
         - "https://localhost:3000"
-      allowed-methods: 
+      allowed-methods:
         - GET
         - POST
         - DELETE

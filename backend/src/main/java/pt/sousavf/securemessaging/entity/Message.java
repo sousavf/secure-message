@@ -13,7 +13,8 @@ import java.util.UUID;
 @Table(name = "messages", indexes = {
     @Index(name = "idx_message_expires_at", columnList = "expiresAt"),
     @Index(name = "idx_message_consumed", columnList = "consumed"),
-    @Index(name = "idx_message_created_at", columnList = "createdAt")
+    @Index(name = "idx_message_created_at", columnList = "createdAt"),
+    @Index(name = "idx_message_conversation_id", columnList = "conversation_id")
 })
 public class Message {
 
@@ -52,6 +53,9 @@ public class Message {
 
     @Column(name = "sender_device_id")
     private String senderDeviceId;
+
+    @Column(name = "conversation_id")
+    private UUID conversationId;
 
     public Message() {}
 
@@ -141,5 +145,13 @@ public class Message {
 
     public void setSenderDeviceId(String senderDeviceId) {
         this.senderDeviceId = senderDeviceId;
+    }
+
+    public UUID getConversationId() {
+        return conversationId;
+    }
+
+    public void setConversationId(UUID conversationId) {
+        this.conversationId = conversationId;
     }
 }

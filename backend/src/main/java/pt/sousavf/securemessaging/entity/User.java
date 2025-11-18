@@ -41,6 +41,9 @@ public class User {
     @Column(name = "original_transaction_id")
     private String originalTransactionId;
 
+    @Column(name = "is_business_user", nullable = false)
+    private boolean isBusinessUser = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -126,9 +129,17 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
+    public boolean isBusinessUser() {
+        return isBusinessUser;
+    }
+
+    public void setBusinessUser(boolean businessUser) {
+        isBusinessUser = businessUser;
+    }
+
     public boolean isPremiumActive() {
-        return subscriptionStatus == SubscriptionStatus.PREMIUM_ACTIVE && 
-               subscriptionExpiresAt != null && 
+        return subscriptionStatus == SubscriptionStatus.PREMIUM_ACTIVE &&
+               subscriptionExpiresAt != null &&
                LocalDateTime.now().isBefore(subscriptionExpiresAt);
     }
 

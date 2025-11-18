@@ -157,17 +157,19 @@ public class SubscriptionService {
         user.setOriginalTransactionId(result.getOriginalTransactionId());
         user.setLatestReceiptData(receiptData);
         user.setSubscriptionExpiresAt(result.getExpiresAt());
-        
+
         // Determine subscription status based on expiration
         if (result.getExpiresAt().isAfter(LocalDateTime.now())) {
             user.setSubscriptionStatus(User.SubscriptionStatus.PREMIUM_ACTIVE);
+            // Auto-set isBusinessUser when subscription becomes active
+            user.setBusinessUser(true);
         } else {
             user.setSubscriptionStatus(User.SubscriptionStatus.PREMIUM_EXPIRED);
         }
-        
+
         userRepository.save(user);
-        logger.info("Updated subscription for device: {}, status: {}, expires: {}", 
-                   user.getDeviceId(), user.getSubscriptionStatus(), user.getSubscriptionExpiresAt());
+        logger.info("Updated subscription for device: {}, status: {}, expires: {}, isBusinessUser: {}",
+                   user.getDeviceId(), user.getSubscriptionStatus(), user.getSubscriptionExpiresAt(), user.isBusinessUser());
     }
 
     public boolean canSendLargeMessage(String deviceId) {

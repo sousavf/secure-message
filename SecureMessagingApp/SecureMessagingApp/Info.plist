@@ -39,5 +39,7 @@
 	</dict>
 	<key>UILaunchScreen</key>
 	<dict/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is needed to scan QR codes for joining conversations</string>
 </dict>
 </plist>

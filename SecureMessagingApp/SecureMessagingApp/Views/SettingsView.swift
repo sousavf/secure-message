@@ -1,9 +1,6 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
-    @State private var showingSubscriptionView = false
-    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -13,78 +10,17 @@ struct SettingsView: View {
                         Image(systemName: "shield.lefthalf.filled")
                             .font(.system(size: 40))
                             .foregroundStyle(.indigo)
-                        
+
                         Text("Secure Messaging")
                             .font(.title2)
                             .fontWeight(.semibold)
-                        
+
                         Text("Privacy and security information")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top)
-                    
-                    // Subscription Section
-                    VStack(spacing: 16) {
-                        Text("Subscription")
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        VStack(spacing: 12) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Current Plan")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.primary)
-                                    
-                                    Text(subscriptionManager.subscriptionStatus.displayName)
-                                        .font(.headline)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(subscriptionManager.subscriptionStatus == .premium ? .green : .secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Button("Manage") {
-                                    showingSubscriptionView = true
-                                } label: {
-                                    Text("Manage")
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                            
-                            if subscriptionManager.subscriptionStatus == .premium {
-                                HStack {
-                                    Image(systemName: "crown.fill")
-                                        .foregroundColor(.yellow)
-                                    
-                                    Text("Premium features active - Send images up to 10MB")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    
-                                    Spacer()
-                                }
-                            } else {
-                                HStack {
-                                    Image(systemName: "photo")
-                                        .foregroundColor(.gray)
-                                    
-                                    Text("Upgrade to Premium for 10MB image sharing")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    
-                                    Spacer()
-                                }
-                            }
-                        }
-                    }
-                    .padding(16)
-                    .background(Color(.systemGray6).opacity(0.3))
-                    .cornerRadius(12)
                     
                     // Security Features
                     VStack(spacing: 16) {
@@ -163,7 +99,7 @@ struct SettingsView: View {
                         VStack(spacing: 12) {
                             InfoRow(label: "Version", value: "1.0.0")
                             InfoRow(label: "Build", value: "1")
-                            InfoRow(label: "Server", value: "whisper.stratholme.eu")
+                            InfoRow(label: "Server", value: "10.10.0.176:8687")
                         }
                     }
                     .padding(16)
@@ -193,12 +129,6 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
-        }
-        .sheet(isPresented: $showingSubscriptionView) {
-            SubscriptionView()
-        }
-        .task {
-            await subscriptionManager.updateSubscriptionStatus()
         }
     }
 }

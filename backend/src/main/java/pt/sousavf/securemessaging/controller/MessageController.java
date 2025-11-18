@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -79,5 +80,104 @@ public class MessageController {
         logger.error("Unexpected error in MessageController", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                            .body("An unexpected error occurred");
+    }
+
+    // Conversation-scoped message endpoints
+
+    /**
+     * Create a message in a conversation
+     */
+    @PostMapping("/api/conversations/{conversationId}/messages")
+    public ResponseEntity<?> createConversationMessage(
+            @PathVariable UUID conversationId,
+            @Valid @RequestBody CreateMessageRequest request,
+            @RequestHeader(value = "X-Device-ID", required = false) String deviceId) {
+        try {
+            logger.info("Received request to create message in conversation: {} from device: {}", conversationId, deviceId);
+            MessageResponse response = messageService.createConversationMessage(conversationId, request, deviceId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid request: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorMessage(e.getMessage()));
+        } catch (IllegalStateException e) {
+            logger.warn("State error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorMessage(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error creating conversation message", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorMessage("Error creating message"));
+        }
+    }
+
+    /**
+     * Get all messages in a conversation
+     */
+    @GetMapping("/api/conversations/{conversationId}/messages")
+    public ResponseEntity<?> getConversationMessages(
+            @PathVariable UUID conversationId) {
+        try {
+            logger.info("Received request to retrieve messages from conversation: {}", conversationId);
+            List<MessageResponse> messages = messageService.getConversationMessages(conversationId);
+            return ResponseEntity.ok(messages);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid request: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorMessage(e.getMessage()));
+        } catch (IllegalStateException e) {
+            logger.warn("State error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorMessage(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error retrieving conversation messages", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorMessage("Error retrieving messages"));
+        }
+    }
+
+    /**
+     * Retrieve and consume a specific message from a conversation
+     */
+    @GetMapping("/api/conversations/{conversationId}/messages/{messageId}")
+    public ResponseEntity<?> getConversationMessage(
+            @PathVariable UUID conversationId,
+            @PathVariable UUID messageId) {
+        try {
+            logger.info("Received request to retrieve message: {} from conversation: {}", messageId, conversationId);
+
+            Optional<MessageResponse> message = messageService.retrieveConversationMessage(conversationId, messageId);
+
+            if (message.isPresent()) {
+                return ResponseEntity.ok(message.get());
+            } else {
+                return ResponseEntity.status(HttpStatus.GONE).build();
+            }
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid request: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorMessage(e.getMessage()));
+        } catch (IllegalStateException e) {
+            logger.warn("State error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorMessage(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error retrieving conversation message: {}", messageId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorMessage("Error retrieving message"));
+        }
+    }
+
+    // Helper class for error messages
+    public static class ErrorMessage {
+        private final String message;
+
+        public ErrorMessage(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
+        }
     }
 }

@@ -4,7 +4,6 @@ import PhotosUI
 
 struct ComposeView: View {
     @State private var messageText = ""
-    @State private var selectedImage: UIImage?
     @State private var isEncrypting = false
     @State private var shareableLink: String?
     @State private var showingShareSheet = false
@@ -12,12 +11,9 @@ struct ComposeView: View {
     @State private var showingError = false
     @State private var isCopyButtonPressed = false
     @State private var isNewMessageButtonPressed = false
-    @State private var showingImagePicker = false
-    @State private var showingSubscriptionView = false
     @FocusState private var isTextEditorFocused: Bool
-    
+
     @StateObject private var apiService = APIService()
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
     private let linkManager = LinkManager()
     
     var body: some View {
@@ -48,25 +44,12 @@ struct ComposeView: View {
                             Text("Whisper")
                                 .font(.headline)
                                 .foregroundStyle(.primary)
-                            
+
                             Spacer()
-                            
-                            HStack(spacing: 12) {
-                                Button {
-                                    if subscriptionManager.subscriptionStatus == .premium {
-                                        showingImagePicker = true
-                                    } else {
-                                        showingSubscriptionView = true
-                                    }
-                                } label: {
-                                    Image(systemName: "photo")
-                                        .foregroundColor(.blue)
-                                }
-                                
-                                Text("\(messageText.count) characters")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
+
+                            Text("\(messageText.count) characters")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                         
                         ZStack(alignment: .topLeading) {
@@ -90,35 +73,6 @@ struct ComposeView: View {
                         }
                         .frame(minHeight: 150)
                         .animation(.easeInOut(duration: 0.2), value: isTextEditorFocused)
-                        
-                        // Image Preview Section
-                        if let image = selectedImage {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Text("Attached Image")
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                    
-                                    Spacer()
-                                    
-                                    Button("Remove") {
-                                        selectedImage = nil
-                                    }
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                                }
-                                
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(maxHeight: 200)
-                                    .cornerRadius(8)
-                                    .clipped()
-                            }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                        }
                     }
                     
                     // Generated Link Section
@@ -192,7 +146,6 @@ struct ComposeView: View {
                                     // Clear everything to start a new message
                                     shareableLink = nil
                                     messageText = ""
-                                    selectedImage = nil
                                     
                                     // Reset visual feedback
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -248,7 +201,7 @@ struct ComposeView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.indigo)
-                .disabled((messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImage == nil) || isEncrypting)
+                .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isEncrypting)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
                 }
@@ -271,80 +224,24 @@ struct ComposeView: View {
                 shareableLink = nil
             }
         }
-        .onChange(of: selectedImage) { _, newValue in
-            // Reset the shareable link when user selects an image
-            if newValue != nil && shareableLink != nil {
-                shareableLink = nil
-            }
-        }
-        .photosPicker(isPresented: $showingImagePicker, selection: Binding<PhotosPickerItem?>(
-            get: { nil },
-            set: { item in
-                Task {
-                    if let item = item,
-                       let data = try? await item.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
-                        
-                        // Compress image if needed for premium users (max 10MB)
-                        let maxSize: Int64 = subscriptionManager.subscriptionStatus == .premium ? 10_485_760 : 102_400
-                        
-                        if let compressedImage = compressImage(image, maxSizeBytes: maxSize) {
-                            await MainActor.run {
-                                selectedImage = compressedImage
-                            }
-                        } else {
-                            await MainActor.run {
-                                errorMessage = "Image is too large. Please choose a smaller image."
-                                showingError = true
-                            }
-                        }
-                    }
-                }
-            }
-        ))
-        .sheet(isPresented: $showingSubscriptionView) {
-            SubscriptionView()
-        }
     }
     
     private func encryptAndUpload(scrollProxy: ScrollViewProxy) {
-        guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || selectedImage != nil else {
+        guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
-        
+
         isEncrypting = true
         shareableLink = nil
-        
+
         Task {
             do {
                 let key = CryptoManager.generateKey()
-                
-                // Prepare message content
-                var contentToEncrypt = messageText
-                
-                // If there's an image, convert it to base64 and append
-                if let image = selectedImage {
-                    let imageData = image.jpegData(compressionQuality: 0.8) ?? Data()
-                    let base64Image = imageData.base64EncodedString()
-                    
-                    // Create a JSON structure containing both text and image
-                    let messageContent = MessageContent(
-                        text: messageText.isEmpty ? nil : messageText,
-                        image: base64Image,
-                        imageType: "jpeg"
-                    )
-                    
-                    let encoder = JSONEncoder()
-                    if let jsonData = try? encoder.encode(messageContent) {
-                        contentToEncrypt = String(data: jsonData, encoding: .utf8) ?? messageText
-                    }
-                }
-                
-                let encryptedMessage = try CryptoManager.encrypt(message: contentToEncrypt, key: key)
-                
-                // Get device ID and send with message
-                let deviceId = await DeviceIdentifierManager.shared.getDeviceId()
-                let messageId = try await apiService.createMessage(encryptedMessage, deviceId: deviceId)
+
+                let encryptedMessage = try CryptoManager.encrypt(message: messageText, key: key)
+
+                // Send message to server
+                let messageId = try await apiService.createMessage(encryptedMessage, deviceId: nil)
                 
                 let link = linkManager.generateShareableLink(messageId: messageId, key: key)
                 
@@ -352,8 +249,7 @@ struct ComposeView: View {
                     shareableLink = link
                     isEncrypting = false
                     messageText = ""
-                    selectedImage = nil
-                    
+
                     // Auto-scroll to the secure link section
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation(.easeInOut(duration: 0.5)) {
@@ -375,45 +271,6 @@ struct ComposeView: View {
                 }
             }
         }
-    }
-    
-    private func compressImage(_ image: UIImage, maxSizeBytes: Int64) -> UIImage? {
-        var compression: CGFloat = 1.0
-        var imageData = image.jpegData(compressionQuality: compression)
-        
-        while let data = imageData, Int64(data.count) > maxSizeBytes && compression > 0.1 {
-            compression -= 0.1
-            imageData = image.jpegData(compressionQuality: compression)
-        }
-        
-        if let data = imageData, Int64(data.count) <= maxSizeBytes {
-            return UIImage(data: data)
-        }
-        
-        // If still too large, resize the image
-        let maxDimension: CGFloat = 1024
-        let size = image.size
-        let aspectRatio = size.width / size.height
-        
-        let newSize: CGSize
-        if size.width > size.height {
-            newSize = CGSize(width: maxDimension, height: maxDimension / aspectRatio)
-        } else {
-            newSize = CGSize(width: maxDimension * aspectRatio, height: maxDimension)
-        }
-        
-        UIGraphicsBeginImageContextWithOptions(newSize, false, 0)
-        image.draw(in: CGRect(origin: .zero, size: newSize))
-        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        if let resized = resizedImage,
-           let finalData = resized.jpegData(compressionQuality: 0.8),
-           Int64(finalData.count) <= maxSizeBytes {
-            return resized
-        }
-        
-        return nil
     }
 }
 

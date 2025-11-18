@@ -23,7 +23,7 @@ services:
 
   # Backend Application (from Docker Hub)
   backend:
-    image: sousavfl/safe-whisper-backend:v1.0
+    image: registry.vascosousa.com/admin/safe-whisper-backend:v1.2
     container_name: safe-whisper-backend-prod
     environment:
       # Database connection

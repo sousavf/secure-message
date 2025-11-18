@@ -3,10 +3,13 @@ package pt.sousavf.securemessaging.service;
 import pt.sousavf.securemessaging.dto.CreateMessageRequest;
 import pt.sousavf.securemessaging.dto.MessageResponse;
 import pt.sousavf.securemessaging.dto.StatsResponse;
+import pt.sousavf.securemessaging.entity.Conversation;
 import pt.sousavf.securemessaging.entity.Message;
+import pt.sousavf.securemessaging.repository.ConversationRepository;
 import pt.sousavf.securemessaging.repository.MessageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -14,8 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -23,16 +28,20 @@ public class MessageService {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageService.class);
 
-    private final MessageRepository messageRepository;
-    private final SubscriptionService subscriptionService;
-    
+    @Autowired
+    private MessageRepository messageRepository;
+
+    @Autowired
+    private ConversationRepository conversationRepository;
+
+    @Autowired
+    private SubscriptionService subscriptionService;
+
+    @Autowired(required = false)
+    private ConversationService conversationService;
+
     @Value("${app.message.default-ttl-hours:24}")
     private int defaultTtlHours;
-
-    public MessageService(MessageRepository messageRepository, SubscriptionService subscriptionService) {
-        this.messageRepository = messageRepository;
-        this.subscriptionService = subscriptionService;
-    }
 
     public MessageResponse createMessage(CreateMessageRequest request) {
         return createMessage(request, null);
@@ -137,16 +146,142 @@ public class MessageService {
     @Scheduled(fixedRateString = "${app.message.cleanup-interval-minutes:60}000")
     public void cleanupExpiredMessages() {
         logger.info("Starting cleanup of expired messages");
-        
+
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime consumedThreshold = now.minusHours(1);
-        
+
         int expiredDeleted = messageRepository.deleteExpiredMessages(now);
         int consumedDeleted = messageRepository.deleteConsumedMessages(consumedThreshold);
-        
+
         if (expiredDeleted > 0 || consumedDeleted > 0) {
-            logger.info("Cleanup completed: {} expired messages deleted, {} consumed messages deleted", 
+            logger.info("Cleanup completed: {} expired messages deleted, {} consumed messages deleted",
                        expiredDeleted, consumedDeleted);
         }
+
+        // Also clean up conversations
+        if (conversationService != null) {
+            try {
+                conversationService.expireConversations();
+                conversationService.cleanupDeletedConversations();
+            } catch (Exception e) {
+                logger.error("Error cleaning up conversations", e);
+            }
+        }
+    }
+
+    /**
+     * Create a message in a conversation
+     */
+    public MessageResponse createConversationMessage(UUID conversationId, CreateMessageRequest request, String senderDeviceId) {
+        logger.info("Creating message in conversation: {}", conversationId);
+
+        // Validate conversation exists and is active
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+
+        if (!conversation.isActive()) {
+            throw new IllegalStateException("Conversation is no longer active");
+        }
+
+        // Check message size limits if sender device ID is provided
+        if (senderDeviceId != null) {
+            long maxSize = subscriptionService.getMaxMessageSize(senderDeviceId);
+            long messageSize = estimateMessageSize(request);
+
+            if (messageSize > maxSize) {
+                throw new IllegalArgumentException(
+                    String.format("Message size (%d bytes) exceeds limit (%d bytes). Upgrade to premium for 10MB messages.",
+                        messageSize, maxSize));
+            }
+        }
+
+        LocalDateTime expiresAt = LocalDateTime.now().plusHours(defaultTtlHours);
+
+        Message message = new Message(
+            request.getCiphertext(),
+            request.getNonce(),
+            request.getTag(),
+            expiresAt
+        );
+        message.setConversationId(conversationId);
+
+        if (senderDeviceId != null) {
+            message.setSenderDeviceId(senderDeviceId);
+        }
+
+        Message savedMessage = messageRepository.save(message);
+        logger.info("Conversation message created with ID: {}, conversation: {}", savedMessage.getId(), conversationId);
+
+        return MessageResponse.createResponse(savedMessage.getId());
+    }
+
+    /**
+     * Get all active messages in a conversation
+     */
+    public List<MessageResponse> getConversationMessages(UUID conversationId) {
+        logger.info("Retrieving messages for conversation: {}", conversationId);
+
+        // Validate conversation exists and is active
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+
+        if (!conversation.isActive()) {
+            throw new IllegalStateException("Conversation is no longer active");
+        }
+
+        List<Message> messages = messageRepository.findActiveByConversationId(conversationId);
+        logger.info("Found {} active messages for conversation: {} (current time: {})",
+            messages.size(), conversationId, LocalDateTime.now());
+
+        for (Message msg : messages) {
+            logger.debug("Message ID: {}, expiresAt: {}, isExpired: {}",
+                msg.getId(), msg.getExpiresAt(), msg.isExpired());
+        }
+
+        return messages.stream()
+            .map(MessageResponse::fromMessage)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Retrieve and consume a message from a conversation
+     */
+    @Transactional
+    public Optional<MessageResponse> retrieveConversationMessage(UUID conversationId, UUID messageId) {
+        logger.info("Retrieving message from conversation: {} - Message: {}", conversationId, messageId);
+
+        // Validate conversation exists and is active
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+
+        if (!conversation.isActive()) {
+            throw new IllegalStateException("Conversation is no longer active");
+        }
+
+        Optional<Message> messageOpt = messageRepository.findById(messageId);
+
+        if (messageOpt.isEmpty()) {
+            logger.warn("Message not found: {}", messageId);
+            return Optional.empty();
+        }
+
+        Message message = messageOpt.get();
+
+        // Verify message belongs to this conversation
+        if (!conversationId.equals(message.getConversationId())) {
+            logger.warn("Message does not belong to conversation: {}", conversationId);
+            return Optional.empty();
+        }
+
+        if (message.isConsumed() || message.isExpired()) {
+            logger.warn("Message already consumed or expired: {}", messageId);
+            return Optional.empty();
+        }
+
+        message.markAsConsumed();
+        messageRepository.save(message);
+
+        logger.info("Conversation message retrieved and marked as consumed: {}", messageId);
+        return Optional.of(MessageResponse.fromMessage(message));
     }
 }

@@ -1,0 +1,17 @@
+.openapi-generator-ignore
+OpenAPIClient/Package.swift
+OpenAPIClient/Sources/APIs/ConversationControllerAPI.swift
+OpenAPIClient/Sources/APIs/MessageControllerAPI.swift
+OpenAPIClient/Sources/APIs/StatsControllerAPI.swift
+OpenAPIClient/Sources/APIs/SubscriptionControllerAPI.swift
+OpenAPIClient/Sources/APIs/UniversalLinksControllerAPI.swift
+OpenAPIClient/Sources/Models/CreateConversationRequest.swift
+OpenAPIClient/Sources/Models/CreateMessageRequest.swift
+OpenAPIClient/Sources/Models/MessageResponse.swift
+OpenAPIClient/Sources/Models/StatsResponse.swift
+OpenAPIClient/Sources/Models/SubscriptionStatusResponse.swift
+OpenAPIClient/Sources/Models/VerifyReceiptRequest.swift
+OpenAPIClient/Sources/Private/AnyDecodable.swift
+OpenAPIClient/Sources/Private/OpenISO8601DateFormatter.swift
+OpenAPITransport/Package.swift
+OpenAPITransport/Sources/OpenAPITransport.swift
