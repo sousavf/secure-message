@@ -4,7 +4,7 @@ import CryptoKit
 class LinkManager {
     private let baseURL: String
     
-    init(baseURL: String = "http://10.10.0.176:8687") {
+    init(baseURL: String = "https://privileged.stratholme.eu") {
         self.baseURL = baseURL
     }
     

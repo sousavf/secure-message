@@ -129,7 +129,7 @@ struct ConversationListView: View {
         print("[DEBUG] ConversationListView - QR code scanned: \(code)")
 
         // Parse the conversation link to extract conversation ID
-        // Expected format: http://10.10.0.176:8687/join/4c80ec7f-996e-4249-9b9b-9377c6abcdf8
+        // Expected format: https://privileged.stratholme.eu/join/4c80ec7f-996e-4249-9b9b-9377c6abcdf8
         if let url = URL(string: code),
            let lastComponent = url.pathComponents.last,
            let conversationId = UUID(uuidString: lastComponent) {

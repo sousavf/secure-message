@@ -152,10 +152,11 @@ public class MessageService {
 
         int expiredDeleted = messageRepository.deleteExpiredMessages(now);
         int consumedDeleted = messageRepository.deleteConsumedMessages(consumedThreshold);
+        int conversationMessagesDeleted = messageRepository.deleteMessagesFromExpiredConversations(now);
 
-        if (expiredDeleted > 0 || consumedDeleted > 0) {
-            logger.info("Cleanup completed: {} expired messages deleted, {} consumed messages deleted",
-                       expiredDeleted, consumedDeleted);
+        if (expiredDeleted > 0 || consumedDeleted > 0 || conversationMessagesDeleted > 0) {
+            logger.info("Cleanup completed: {} expired standalone messages deleted, {} consumed standalone messages deleted, {} messages from expired conversations deleted",
+                       expiredDeleted, consumedDeleted, conversationMessagesDeleted);
         }
 
         // Also clean up conversations

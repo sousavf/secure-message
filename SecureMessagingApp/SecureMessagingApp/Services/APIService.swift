@@ -6,7 +6,7 @@ class APIService: ObservableObject {
     private let baseURL: String
     private let session: URLSession
     
-    init(baseURL: String = "http://10.10.0.176:8687") {
+    init(baseURL: String = "https://privileged.stratholme.eu") {
         self.baseURL = baseURL
 
         let config = URLSessionConfiguration.default
@@ -482,20 +482,55 @@ class APIService: ObservableObject {
     func getConversationMessages(conversationId: UUID) async throws -> [ConversationMessage] {
         let urlRequest = try createRequest(for: "/api/conversations/\(conversationId.uuidString)/messages")
 
+        print("[DEBUG] getConversationMessages - Request URL: \(urlRequest.url?.absoluteString ?? "unknown")")
+
         let (data, response) = try await session.data(for: urlRequest)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.unknownError
         }
 
+        print("[DEBUG] getConversationMessages - HTTP Status Code: \(httpResponse.statusCode)")
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("[DEBUG] getConversationMessages - Response body: \(responseString)")
+        }
+
         switch httpResponse.statusCode {
         case 200:
             let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
-            if let messages = try? decoder.decode([ConversationMessage].self, from: data) {
-                return messages
+            decoder.dateDecodingStrategy = .custom { decoder in
+                let container = try decoder.singleValueContainer()
+                let dateString = try container.decode(String.self)
+
+                // Try multiple date formats that Spring Boot might use
+                let formatters = [
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSS",
+                    "yyyy-MM-dd'T'HH:mm:ss",
+                    "yyyy-MM-dd HH:mm:ss",
+                    "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                ]
+
+                for format in formatters {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = format
+                    formatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    if let date = formatter.date(from: dateString) {
+                        return date
+                    }
+                }
+
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(dateString)")
             }
-            return []
+            do {
+                let messages = try decoder.decode([ConversationMessage].self, from: data)
+                print("[DEBUG] getConversationMessages - Successfully decoded \(messages.count) messages")
+                return messages
+            } catch {
+                print("[ERROR] getConversationMessages - Failed to decode response: \(error)")
+                throw error
+            }
         case 404:
             throw NetworkError.conversationNotFound
         case 400...499:

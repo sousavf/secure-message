@@ -19,11 +19,11 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     Optional<Message> findAvailableMessage(@Param("id") UUID id, @Param("now") LocalDateTime now);
 
     @Modifying
-    @Query("DELETE FROM Message m WHERE m.expiresAt < :now")
+    @Query("DELETE FROM Message m WHERE m.expiresAt < :now AND m.conversationId IS NULL")
     int deleteExpiredMessages(@Param("now") LocalDateTime now);
 
     @Modifying
-    @Query("DELETE FROM Message m WHERE m.consumed = true AND m.readAt < :threshold")
+    @Query("DELETE FROM Message m WHERE m.consumed = true AND m.readAt < :threshold AND m.conversationId IS NULL")
     int deleteConsumedMessages(@Param("threshold") LocalDateTime threshold);
 
     @Query("SELECT COUNT(m) FROM Message m WHERE DATE(m.createdAt) = DATE(:date)")
@@ -64,4 +64,11 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
      */
     @Query("SELECT COUNT(m) FROM Message m WHERE m.conversationId = :conversationId AND m.expiresAt > CURRENT_TIMESTAMP")
     long countActiveByConversationId(@Param("conversationId") UUID conversationId);
+
+    /**
+     * Delete messages whose conversation has expired
+     */
+    @Modifying
+    @Query("DELETE FROM Message m WHERE m.conversationId IN (SELECT c.id FROM Conversation c WHERE c.expiresAt < :now)")
+    int deleteMessagesFromExpiredConversations(@Param("now") LocalDateTime now);
 }
