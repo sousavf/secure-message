@@ -64,6 +64,9 @@ struct Conversation: Identifiable, Codable {
     let status: String
     let createdAt: Date
     let expiresAt: Date
+    // Note: encryptionKey is NOT transmitted over the wire
+    // It's generated and stored locally on the client only
+    var encryptionKey: String? // Master encryption key stored locally only (not from backend)
 
     var ttlHours: Int {
         let hours = Int(expiresAt.timeIntervalSince(createdAt) / 3600)

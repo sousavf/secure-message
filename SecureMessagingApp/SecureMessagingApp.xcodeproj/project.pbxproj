@@ -26,6 +26,7 @@
 		E13C95A72ECCBD1200D77F31 /* ConversationListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95A12ECCBD1200D77F31 /* ConversationListView.swift */; };
 		E13C95A82ECCBD1200D77F31 /* CreateConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95A22ECCBD1200D77F31 /* CreateConversationView.swift */; };
 		E13C95A92ECCBD1200D77F31 /* ConversationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95A32ECCBD1200D77F31 /* ConversationDetailView.swift */; };
+		E13C95BE2ECCCA8E00D77F31 /* KeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95BD2ECCCA8E00D77F31 /* KeyStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +51,7 @@
 		E13C95A12ECCBD1200D77F31 /* ConversationListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListView.swift; sourceTree = "<group>"; };
 		E13C95A22ECCBD1200D77F31 /* CreateConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateConversationView.swift; sourceTree = "<group>"; };
 		E13C95A32ECCBD1200D77F31 /* ConversationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationDetailView.swift; sourceTree = "<group>"; };
+		E13C95BD2ECCCA8E00D77F31 /* KeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -114,6 +116,7 @@
 		1A1A1A381A1A1A1A1A1A1A38 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				E13C95BD2ECCCA8E00D77F31 /* KeyStore.swift */,
 				1A1A1A271A1A1A1A1A1A1A27 /* CryptoManager.swift */,
 				1A1A1A291A1A1A1A1A1A1A29 /* APIService.swift */,
 				1A1A1A2B1A1A1A1A1A1A1A2B /* LinkManager.swift */,
@@ -209,6 +212,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E13C95BE2ECCCA8E00D77F31 /* KeyStore.swift in Sources */,
 				E13C95A52ECCBD1200D77F31 /* ConversationShareView.swift in Sources */,
 				E13C95A62ECCBD1200D77F31 /* QRScannerView.swift in Sources */,
 				E13C95A72ECCBD1200D77F31 /* ConversationListView.swift in Sources */,

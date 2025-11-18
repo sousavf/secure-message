@@ -113,6 +113,15 @@ struct ConversationListView: View {
         do {
             print("[DEBUG] ConversationListView - Starting listConversations with deviceId: \(deviceId)")
             conversations = try await apiService.listConversations(deviceId: deviceId)
+
+            // Load stored encryption keys for each conversation
+            for i in 0..<conversations.count {
+                if let storedKey = KeyStore.shared.retrieveKey(for: conversations[i].id) {
+                    print("[DEBUG] ConversationListView - Loaded stored key for conversation: \(conversations[i].id)")
+                    conversations[i].encryptionKey = storedKey
+                }
+            }
+
             print("[DEBUG] ConversationListView - Loaded \(conversations.count) conversations")
             errorMessage = nil
         } catch let error as NetworkError {
@@ -128,12 +137,19 @@ struct ConversationListView: View {
     private func handleQRCodeScanned(_ code: String) {
         print("[DEBUG] ConversationListView - QR code scanned: \(code)")
 
-        // Parse the conversation link to extract conversation ID
-        // Expected format: https://privileged.stratholme.eu/join/4c80ec7f-996e-4249-9b9b-9377c6abcdf8
+        // Parse the conversation link to extract conversation ID and encryption key
+        // Expected format: https://privileged.stratholme.eu/join/4c80ec7f-996e-4249-9b9b-9377c6abcdf8#BASE64_ENCRYPTION_KEY
         if let url = URL(string: code),
            let lastComponent = url.pathComponents.last,
            let conversationId = UUID(uuidString: lastComponent) {
             print("[DEBUG] ConversationListView - Extracted conversation ID: \(conversationId)")
+
+            // Extract encryption key from URL fragment
+            let encryptionKey = url.fragment
+            if let key = encryptionKey, !key.isEmpty {
+                print("[DEBUG] ConversationListView - Found encryption key in QR code, storing it")
+                KeyStore.shared.storeKey(key, for: conversationId)
+            }
 
             // Check if we already have this conversation
             if let existingConversation = conversations.first(where: { $0.id == conversationId }) {

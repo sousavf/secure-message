@@ -150,10 +150,21 @@ struct CreateConversationView: View {
         Task {
             do {
                 print("[DEBUG] CreateConversationView - Starting createConversation with TTL: \(selectedTTLHours), deviceId: \(deviceId)")
-                let newConversation = try await apiService.createConversation(
+                var newConversation = try await apiService.createConversation(
                     ttlHours: selectedTTLHours,
                     deviceId: deviceId
                 )
+
+                // Generate master encryption key locally (NEVER send to backend)
+                print("[DEBUG] CreateConversationView - Generating master encryption key locally")
+                let encryptionKey = CryptoManager.generateKey()
+                let encryptionKeyString = CryptoManager.keyToBase64String(encryptionKey)
+                newConversation.encryptionKey = encryptionKeyString
+
+                // Store key locally in KeyStore
+                print("[DEBUG] CreateConversationView - Storing encryption key in KeyStore")
+                KeyStore.shared.storeKey(encryptionKeyString, for: newConversation.id)
+
                 await MainActor.run {
                     print("[DEBUG] CreateConversationView - Conversation created successfully: \(newConversation.id)")
                     onConversationCreated(newConversation)

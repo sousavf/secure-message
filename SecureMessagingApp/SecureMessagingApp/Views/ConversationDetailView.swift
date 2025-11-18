@@ -1,7 +1,8 @@
 import SwiftUI
+import CryptoKit
 
 struct ConversationDetailView: View {
-    var conversation: Conversation
+    @State var conversation: Conversation
     var deviceId: String
     var onUpdate: () -> Void
 
@@ -37,7 +38,7 @@ struct ConversationDetailView: View {
                         ScrollViewReader { scrollProxy in
                             List {
                                 ForEach(messages) { message in
-                                    ConversationMessageRow(message: message)
+                                    ConversationMessageRow(message: message, conversationEncryptionKey: conversation.encryptionKey)
                                         .id(message.id)
                                         .listRowSeparator(.hidden)
                                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
@@ -127,6 +128,15 @@ struct ConversationDetailView: View {
 
         do {
             print("[DEBUG] ConversationDetailView - Starting loadMessages for conversationId: \(conversation.id)")
+
+            // Retrieve encryption key from storage
+            if let storedKey = KeyStore.shared.retrieveKey(for: conversation.id) {
+                print("[DEBUG] ConversationDetailView - Found stored encryption key for conversation")
+                conversation.encryptionKey = storedKey
+            } else {
+                print("[WARNING] ConversationDetailView - No stored encryption key found for conversation")
+            }
+
             messages = try await apiService.getConversationMessages(conversationId: conversation.id)
             print("[DEBUG] ConversationDetailView - Loaded \(messages.count) messages")
             errorMessage = nil
@@ -157,9 +167,19 @@ struct ConversationDetailView: View {
         defer { isSending = false }
 
         do {
-            print("[DEBUG] sendMessage - Generating encryption key")
-            let key = CryptoManager.generateKey()
-            let keyString = CryptoManager.keyToBase64String(key)
+            // Use conversation's master encryption key if available
+            let keyString: String
+            let key: SymmetricKey
+
+            if let conversationKey = conversation.encryptionKey {
+                print("[DEBUG] sendMessage - Using conversation's master encryption key")
+                keyString = conversationKey
+                key = try CryptoManager.keyFromBase64String(conversationKey)
+            } else {
+                print("[DEBUG] sendMessage - Generating new encryption key for conversation")
+                key = CryptoManager.generateKey()
+                keyString = CryptoManager.keyToBase64String(key)
+            }
 
             print("[DEBUG] sendMessage - Encrypting message")
             let encryptedMessage = try CryptoManager.encrypt(message: trimmedMessage, key: key)
@@ -197,15 +217,25 @@ struct ConversationDetailView: View {
         Task {
             do {
                 print("[DEBUG] ConversationDetailView - Calling apiService.generateConversationShareLink")
-                let link = try await apiService.generateConversationShareLink(
+                let baseLink = try await apiService.generateConversationShareLink(
                     conversationId: conversation.id,
                     deviceId: deviceId
                 )
-                print("[DEBUG] ConversationDetailView - Share link received: \(link)")
+
+                // Append encryption key to the link fragment
+                var fullLink = baseLink
+                if let encryptionKey = conversation.encryptionKey {
+                    print("[DEBUG] ConversationDetailView - Appending encryption key to share link")
+                    fullLink = baseLink + "#" + encryptionKey
+                } else {
+                    print("[WARNING] ConversationDetailView - No encryption key available for conversation")
+                }
+
+                print("[DEBUG] ConversationDetailView - Share link generated: \(fullLink)")
                 await MainActor.run {
                     print("[DEBUG] ConversationDetailView - Updating shareLink and showShareModal on MainActor")
-                    self.shareLink = link
-                    print("[DEBUG] ConversationDetailView - shareLink set to: \(self.shareLink ?? "nil")")
+                    self.shareLink = fullLink
+                    print("[DEBUG] ConversationDetailView - shareLink set to: \(self.shareLink)")
                     self.showShareModal = true
                     print("[DEBUG] ConversationDetailView - showShareModal is now: \(self.showShareModal)")
                 }
@@ -226,6 +256,7 @@ struct ConversationDetailView: View {
 
 struct ConversationMessageRow: View {
     let message: ConversationMessage
+    let conversationEncryptionKey: String?
     @State private var decryptedText: String?
 
     var body: some View {
@@ -238,13 +269,23 @@ struct ConversationMessageRow: View {
                         .background(Color.indigo.opacity(0.1))
                         .cornerRadius(12)
                         .foregroundColor(.primary)
-                } else if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag, let keyString = message.encryptionKey {
-                    // Try to decrypt if we have the key
-                    Text(attemptDecryption(ciphertext: ciphertext, nonce: nonce, tag: tag, keyString: keyString) ?? "[Encrypted Message]")
-                        .padding(12)
-                        .background(Color.indigo.opacity(0.1))
-                        .cornerRadius(12)
-                        .foregroundColor(.primary)
+                } else if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag {
+                    // Try to decrypt using conversation key or message's own key
+                    let keyToUse = message.encryptionKey ?? conversationEncryptionKey
+                    if let keyString = keyToUse {
+                        Text(attemptDecryption(ciphertext: ciphertext, nonce: nonce, tag: tag, keyString: keyString) ?? "[Encrypted Message]")
+                            .padding(12)
+                            .background(Color.indigo.opacity(0.1))
+                            .cornerRadius(12)
+                            .foregroundColor(.primary)
+                    } else {
+                        Text("[Encrypted Message]")
+                            .padding(12)
+                            .background(Color.indigo.opacity(0.1))
+                            .cornerRadius(12)
+                            .italic()
+                            .foregroundColor(.secondary)
+                    }
                 } else {
                     // Can't decrypt - show placeholder
                     Text("[Encrypted Message]")
@@ -266,8 +307,11 @@ struct ConversationMessageRow: View {
         .padding(.vertical, 4)
         .onAppear {
             // Try to decrypt on appearance if we have the key
-            if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag, let keyString = message.encryptionKey {
-                decryptedText = attemptDecryption(ciphertext: ciphertext, nonce: nonce, tag: tag, keyString: keyString)
+            if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag {
+                let keyToUse = message.encryptionKey ?? conversationEncryptionKey
+                if let keyString = keyToUse {
+                    decryptedText = attemptDecryption(ciphertext: ciphertext, nonce: nonce, tag: tag, keyString: keyString)
+                }
             }
         }
     }
