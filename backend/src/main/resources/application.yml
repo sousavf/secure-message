@@ -57,7 +57,7 @@ app:
     default-ttl-hours: 24
     cleanup-interval-minutes: 60
   share:
-    base-url: ${APP_SHARE_BASE_URL:http://10.10.0.176:8687}
+    base-url: ${APP_SHARE_BASE_URL:https://privileged.stratholme.eu}
   subscription:
     app-shared-secret: ${APP_SHARED_SECRET:your-app-shared-secret}
     sandbox: ${SUBSCRIPTION_SANDBOX:true}

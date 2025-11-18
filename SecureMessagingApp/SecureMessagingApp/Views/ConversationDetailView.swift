@@ -107,7 +107,7 @@ struct ConversationDetailView: View {
                 Text(errorMessage ?? "")
             })
             .sheet(isPresented: $showShareModal) {
-                ConversationShareView(shareLink: shareLink, conversationId: conversation.id)
+                ConversationShareView(shareLink: $shareLink, conversationId: conversation.id)
             }
             .onAppear {
                 Task {

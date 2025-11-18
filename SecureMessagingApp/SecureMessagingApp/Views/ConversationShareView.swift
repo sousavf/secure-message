@@ -4,7 +4,7 @@ import UIKit
 struct ConversationShareView: View {
     @Environment(\.dismiss) var dismiss
 
-    let shareLink: String
+    @Binding var shareLink: String
     let conversationId: UUID
     @State private var qrCodeImage: UIImage?
     @State private var showLinkCopiedAlert = false
@@ -190,11 +190,17 @@ struct ConversationShareView: View {
                     print("[DEBUG] ConversationShareView - onAppear called, generating QR code")
                     generateQRCode()
                 }
+                .onChange(of: shareLink) { _ in
+                    print("[DEBUG] ConversationShareView - shareLink changed, regenerating QR code")
+                    generateQRCode()
+                }
             }
         }
     }
 
     private func generateQRCode() {
+        print("[DEBUG] ConversationShareView - Generating QR code from shareLink: \(shareLink)")
+        print("[DEBUG] ConversationShareView - shareLink length: \(shareLink.count)")
         qrCodeImage = QRCodeGenerator.generateQRCode(from: shareLink, size: CGSize(width: 300, height: 300))
     }
 
@@ -248,7 +254,7 @@ class ImageSaver: NSObject {
 
 #Preview {
     ConversationShareView(
-        shareLink: "https://privileged.stratholme.eu/conversations/abc123/join?token=xyz789",
+        shareLink: .constant("https://privileged.stratholme.eu/conversations/abc123/join?token=xyz789"),
         conversationId: UUID()
     )
 }

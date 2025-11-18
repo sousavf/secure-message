@@ -4,12 +4,14 @@ import UIKit
 
 class QRCodeGenerator {
     static func generateQRCode(from string: String, size: CGSize = CGSize(width: 300, height: 300)) -> UIImage? {
+        print("[DEBUG] QRCodeGenerator - generateQRCode called with string length: \(string.count)")
         print("[DEBUG] QRCodeGenerator - generateQRCode called with string: \(string)")
         let data = string.data(using: String.Encoding.utf8)
 
         if let filter = CIFilter(name: "CIQRCodeGenerator") {
             filter.setValue(data, forKey: "inputMessage")
-            filter.setValue("H", forKey: "inputCorrectionLevel")
+            // Use lower error correction level (L) to fit longer strings (encryption key in fragment)
+            filter.setValue("L", forKey: "inputCorrectionLevel")
 
             if let ciImage = filter.outputImage {
                 print("[DEBUG] QRCodeGenerator - CI Image created with extent: \(ciImage.extent)")
