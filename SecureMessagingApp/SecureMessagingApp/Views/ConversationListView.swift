@@ -161,11 +161,27 @@ struct ConversationListView: View {
                 selectedConversation = existingConversation
             } else {
                 print("[DEBUG] ConversationListView - Conversation not in list, fetching from backend")
-                // Reload conversations to see if the new one appears
+                // Fetch the conversation from the backend
                 Task {
-                    await loadConversations()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        selectedConversation = conversations.first(where: { $0.id == conversationId })
+                    do {
+                        print("[DEBUG] ConversationListView - Fetching conversation from backend: \(conversationId)")
+                        let conversation = try await apiService.getConversation(id: conversationId)
+
+                        await MainActor.run {
+                            print("[DEBUG] ConversationListView - Conversation fetched successfully")
+                            // Add to conversations list
+                            var updatedConversation = conversation
+                            if let key = encryptionKey, !key.isEmpty {
+                                updatedConversation.encryptionKey = key
+                            }
+                            conversations.insert(updatedConversation, at: 0)
+                            selectedConversation = updatedConversation
+                        }
+                    } catch {
+                        print("[ERROR] ConversationListView - Failed to fetch conversation: \(error)")
+                        await MainActor.run {
+                            errorMessage = "Failed to join conversation. Please try again."
+                        }
                     }
                 }
             }
