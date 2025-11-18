@@ -79,8 +79,9 @@ struct ConversationListView: View {
                     }
                 }
                 .sheet(isPresented: $showQRScanner) {
-                    Text("QR Scanner")
-                        .font(.title)
+                    QRScannerView { scannedCode in
+                        handleQRCodeScanned(scannedCode)
+                    }
                 }
                 .alert("Error", isPresented: .constant(errorMessage != nil), actions: {
                     Button("OK") { errorMessage = nil }
@@ -136,6 +137,9 @@ struct ConversationListView: View {
 
     private func handleQRCodeScanned(_ code: String) {
         print("[DEBUG] ConversationListView - QR code scanned: \(code)")
+
+        // Close the QR scanner sheet
+        showQRScanner = false
 
         // Parse the conversation link to extract conversation ID and encryption key
         // Expected format: https://privileged.stratholme.eu/join/4c80ec7f-996e-4249-9b9b-9377c6abcdf8#BASE64_ENCRYPTION_KEY

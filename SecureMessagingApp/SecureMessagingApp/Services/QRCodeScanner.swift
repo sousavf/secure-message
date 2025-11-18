@@ -89,8 +89,11 @@ class QRCodeScanner: NSObject, AVCaptureMetadataOutputObjectsDelegate, Observabl
     }
 
     func getPreviewLayer() -> AVCaptureVideoPreviewLayer {
+        print("[DEBUG] QRCodeScanner - Creating preview layer")
+        print("[DEBUG] QRCodeScanner - Capture session is running: \(captureSession.isRunning)")
         let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         previewLayer.videoGravity = .resizeAspectFill
+        print("[DEBUG] QRCodeScanner - Preview layer created successfully")
         return previewLayer
     }
 }
