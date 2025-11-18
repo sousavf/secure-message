@@ -123,7 +123,35 @@ struct ConversationListView: View {
                 }
             }
 
-            print("[DEBUG] ConversationListView - Loaded \(conversations.count) conversations")
+            // Also load joined conversations from local storage
+            print("[DEBUG] ConversationListView - Loading joined conversations from local storage")
+            let joinedConversationIds = ConversationLinkStore.shared.getAllConversationIds()
+            for joinedId in joinedConversationIds {
+                // Skip if already in list (created by this device)
+                if conversations.contains(where: { $0.id == joinedId }) {
+                    continue
+                }
+
+                // Fetch joined conversation from backend
+                do {
+                    let joinedConversation = try await apiService.getConversation(id: joinedId)
+                    var updatedConversation = joinedConversation
+
+                    // Load encryption key
+                    if let storedKey = KeyStore.shared.retrieveKey(for: joinedId) {
+                        updatedConversation.encryptionKey = storedKey
+                    }
+
+                    conversations.append(updatedConversation)
+                    print("[DEBUG] ConversationListView - Loaded joined conversation: \(joinedId)")
+                } catch {
+                    print("[WARNING] ConversationListView - Failed to load joined conversation \(joinedId): \(error)")
+                    // Remove expired link if conversation no longer exists
+                    ConversationLinkStore.shared.deleteLink(for: joinedId)
+                }
+            }
+
+            print("[DEBUG] ConversationListView - Loaded \(conversations.count) conversations total")
             errorMessage = nil
         } catch let error as NetworkError {
             print("[ERROR] ConversationListView - NetworkError caught: \(error)")
@@ -154,6 +182,10 @@ struct ConversationListView: View {
                 print("[DEBUG] ConversationListView - Found encryption key in QR code, storing it")
                 KeyStore.shared.storeKey(key, for: conversationId)
             }
+
+            // Save the conversation link locally
+            print("[DEBUG] ConversationListView - Saving conversation link locally")
+            ConversationLinkStore.shared.saveLink(conversationId, link: code)
 
             // Check if we already have this conversation
             if let existingConversation = conversations.first(where: { $0.id == conversationId }) {
@@ -196,6 +228,11 @@ struct ConversationListView: View {
         do {
             try await apiService.deleteConversation(id: id, deviceId: deviceId)
             conversations.removeAll { $0.id == id }
+
+            // Also remove from local storage
+            ConversationLinkStore.shared.deleteLink(for: id)
+            KeyStore.shared.deleteKey(for: id)
+
             errorMessage = nil
         } catch let error as NetworkError {
             errorMessage = error.localizedDescription
