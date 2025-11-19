@@ -14,6 +14,8 @@ struct ConversationDetailView: View {
     @State private var errorMessage: String?
     @State private var shareLink: String = ""
     @State private var showShareModal = false
+    @State private var showNameEditor = false
+    @State private var editingName: String = ""
     @FocusState private var messageFieldFocused: Bool
 
     // Polling state
@@ -104,13 +106,50 @@ struct ConversationDetailView: View {
                     ProgressView()
                 }
             }
-            .navigationTitle("Conversation")
+            .navigationTitle(conversation.localName ?? "Conversation")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        editingName = conversation.localName ?? ""
+                        showNameEditor = true
+                    }) {
+                        Image(systemName: "pencil")
+                            .foregroundColor(.indigo)
+                    }
+                }
+            }
             .alert("Error", isPresented: .constant(errorMessage != nil), actions: {
                 Button("OK") { errorMessage = nil }
             }, message: {
                 Text(errorMessage ?? "")
             })
+            .sheet(isPresented: $showNameEditor) {
+                VStack(spacing: 16) {
+                    Text("Edit Conversation Name")
+                        .font(.headline)
+
+                    TextField("Conversation name", text: $editingName)
+                        .textFieldStyle(.roundedBorder)
+                        .padding()
+
+                    HStack(spacing: 12) {
+                        Button("Cancel") {
+                            showNameEditor = false
+                            editingName = ""
+                        }
+                        .frame(maxWidth: .infinity)
+
+                        Button("Save") {
+                            saveConversationName()
+                        }
+                        .frame(maxWidth: .infinity)
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .padding()
+                }
+                .padding()
+            }
             .sheet(isPresented: $showShareModal) {
                 ConversationShareView(shareLink: $shareLink, conversationId: conversation.id)
             }
@@ -366,6 +405,22 @@ struct ConversationDetailView: View {
                 }
             }
         }
+    }
+
+    private func saveConversationName() {
+        let trimmedName = editingName.trimmingCharacters(in: .whitespaces)
+        print("[DEBUG] ConversationDetailView - Saving name '\(trimmedName)' for conversation: \(conversation.id)")
+
+        // Store the name (empty names will clear the stored name)
+        ConversationNameStore.shared.storeName(trimmedName, for: conversation.id)
+
+        // Update the conversation in memory
+        conversation.localName = trimmedName.isEmpty ? nil : trimmedName
+        print("[DEBUG] ConversationDetailView - Updated conversation name in memory")
+
+        // Close the editor
+        showNameEditor = false
+        editingName = ""
     }
 }
 

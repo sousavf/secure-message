@@ -70,6 +70,9 @@ struct Conversation: Identifiable, Codable {
     // Track whether this conversation was created by the current device (initiator) or joined (secondary)
     // This is computed locally and not transmitted
     var isCreatedByCurrentDevice: Bool = true
+    // Local-only custom name for this conversation (never transmitted to backend)
+    // Each user/phone can have a different name for the same conversation
+    var localName: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, initiatorUserId, status, createdAt, expiresAt
@@ -84,6 +87,7 @@ struct Conversation: Identifiable, Codable {
         self.expiresAt = expiresAt
         self.encryptionKey = nil
         self.isCreatedByCurrentDevice = true
+        self.localName = nil
     }
 
     init(from decoder: Decoder) throws {
@@ -95,6 +99,7 @@ struct Conversation: Identifiable, Codable {
         expiresAt = try container.decode(Date.self, forKey: .expiresAt)
         encryptionKey = nil
         isCreatedByCurrentDevice = true // Default to true, will be set by the app
+        localName = nil // Will be loaded from ConversationNameStore
     }
 
     func encode(to encoder: Encoder) throws {

@@ -8,6 +8,9 @@ struct ConversationListView: View {
     @State private var selectedConversation: Conversation?
     @State private var showCreateConversation = false
     @State private var showQRScanner = false
+    @State private var showNameEditor = false
+    @State private var editingConversationId: UUID?
+    @State private var editingName: String = ""
     @FocusState private var focusedField: String?
 
     var deviceId: String
@@ -40,24 +43,26 @@ struct ConversationListView: View {
                                         await loadConversations()
                                     }
                                 })) {
-                                    ConversationRowView(conversation: conversation)
-                                        .swipeActions(edge: .trailing) {
-                                            Button(role: .destructive) {
-                                                Task {
-                                                    if conversation.isCreatedByCurrentDevice {
-                                                        await deleteConversation(conversation.id)
-                                                    } else {
-                                                        await leaveConversation(conversation.id)
-                                                    }
-                                                }
-                                            } label: {
+                                    ConversationRowView(conversation: conversation, onEditName: {
+                                        openNameEditor(for: conversation)
+                                    })
+                                    .swipeActions(edge: .trailing) {
+                                        Button(role: .destructive) {
+                                            Task {
                                                 if conversation.isCreatedByCurrentDevice {
-                                                    Label("Delete", systemImage: "trash")
+                                                    await deleteConversation(conversation.id)
                                                 } else {
-                                                    Label("Leave", systemImage: "person.slash.fill")
+                                                    await leaveConversation(conversation.id)
                                                 }
                                             }
+                                        } label: {
+                                            if conversation.isCreatedByCurrentDevice {
+                                                Label("Delete", systemImage: "trash")
+                                            } else {
+                                                Label("Leave", systemImage: "person.slash.fill")
+                                            }
                                         }
+                                    }
                                 }
                             }
                         }
@@ -89,6 +94,35 @@ struct ConversationListView: View {
                 .sheet(isPresented: $showQRScanner) {
                     QRScannerView { scannedCode in
                         handleQRCodeScanned(scannedCode)
+                    }
+                }
+                .sheet(isPresented: $showNameEditor) {
+                    if let conversationId = editingConversationId {
+                        VStack(spacing: 16) {
+                            Text("Edit Conversation Name")
+                                .font(.headline)
+
+                            TextField("Conversation name", text: $editingName)
+                                .textFieldStyle(.roundedBorder)
+                                .padding()
+
+                            HStack(spacing: 12) {
+                                Button("Cancel") {
+                                    showNameEditor = false
+                                    editingConversationId = nil
+                                    editingName = ""
+                                }
+                                .frame(maxWidth: .infinity)
+
+                                Button("Save") {
+                                    saveConversationName(for: conversationId)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .buttonStyle(.borderedProminent)
+                            }
+                            .padding()
+                        }
+                        .padding()
                     }
                 }
                 .alert("Error", isPresented: .constant(errorMessage != nil), actions: {
@@ -123,11 +157,15 @@ struct ConversationListView: View {
             print("[DEBUG] ConversationListView - Starting listConversations with deviceId: \(deviceId)")
             conversations = try await apiService.listConversations(deviceId: deviceId)
 
-            // Load stored encryption keys for each conversation
+            // Load stored encryption keys and custom names for each conversation
             for i in 0..<conversations.count {
                 if let storedKey = KeyStore.shared.retrieveKey(for: conversations[i].id) {
                     print("[DEBUG] ConversationListView - Loaded stored key for conversation: \(conversations[i].id)")
                     conversations[i].encryptionKey = storedKey
+                }
+                if let customName = ConversationNameStore.shared.retrieveName(for: conversations[i].id) {
+                    print("[DEBUG] ConversationListView - Loaded custom name '\(customName)' for conversation: \(conversations[i].id)")
+                    conversations[i].localName = customName
                 }
             }
 
@@ -146,9 +184,12 @@ struct ConversationListView: View {
                     var updatedConversation = joinedConversation
                     updatedConversation.isCreatedByCurrentDevice = false // Mark as joined, not created
 
-                    // Load encryption key
+                    // Load encryption key and custom name
                     if let storedKey = KeyStore.shared.retrieveKey(for: joinedId) {
                         updatedConversation.encryptionKey = storedKey
+                    }
+                    if let customName = ConversationNameStore.shared.retrieveName(for: joinedId) {
+                        updatedConversation.localName = customName
                     }
 
                     conversations.append(updatedConversation)
@@ -222,6 +263,10 @@ struct ConversationListView: View {
                             if let key = encryptionKey, !key.isEmpty {
                                 updatedConversation.encryptionKey = key
                             }
+                            // Load custom name if exists
+                            if let customName = ConversationNameStore.shared.retrieveName(for: conversationId) {
+                                updatedConversation.localName = customName
+                            }
                             conversations.insert(updatedConversation, at: 0)
                             selectedConversation = updatedConversation
                         }
@@ -283,18 +328,53 @@ struct ConversationListView: View {
             errorMessage = "Failed to leave conversation"
         }
     }
+
+    private func saveConversationName(for conversationId: UUID) {
+        let trimmedName = editingName.trimmingCharacters(in: .whitespaces)
+        print("[DEBUG] ConversationListView - Saving name '\(trimmedName)' for conversation: \(conversationId)")
+
+        // Store the name (empty names will clear the stored name)
+        ConversationNameStore.shared.storeName(trimmedName, for: conversationId)
+
+        // Update the conversation in memory
+        if let index = conversations.firstIndex(where: { $0.id == conversationId }) {
+            conversations[index].localName = trimmedName.isEmpty ? nil : trimmedName
+            print("[DEBUG] ConversationListView - Updated conversation name in memory")
+        }
+
+        // Close the editor
+        showNameEditor = false
+        editingConversationId = nil
+        editingName = ""
+    }
+
+    private func openNameEditor(for conversation: Conversation) {
+        editingConversationId = conversation.id
+        editingName = conversation.localName ?? ""
+        showNameEditor = true
+    }
 }
 
 struct ConversationRowView: View {
     let conversation: Conversation
+    var onEditName: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Private Conversation")
-                        .font(.headline)
-                        .fontWeight(.semibold)
+                    let displayName = conversation.localName ?? "Private Conversation"
+                    HStack(spacing: 8) {
+                        Text(displayName)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+
+                        Button(action: onEditName) {
+                            Image(systemName: "pencil")
+                                .font(.caption)
+                                .foregroundColor(.indigo)
+                        }
+                    }
                     Text("Created \(conversation.createdAt.formatted(date: .abbreviated, time: .shortened))")
                         .font(.caption)
                         .foregroundColor(.gray)

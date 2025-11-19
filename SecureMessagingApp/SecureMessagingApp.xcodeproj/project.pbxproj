@@ -28,6 +28,7 @@
 		E13C95A92ECCBD1200D77F31 /* ConversationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95A32ECCBD1200D77F31 /* ConversationDetailView.swift */; };
 		E13C95BE2ECCCA8E00D77F31 /* KeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95BD2ECCCA8E00D77F31 /* KeyStore.swift */; };
 		E13C95D22ECCD64A00D77F31 /* ConversationLinkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95D12ECCD64A00D77F31 /* ConversationLinkStore.swift */; };
+		E13C95D42ECE66DB00D77F31 /* ConversationNameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95D32ECE66DB00D77F31 /* ConversationNameStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,6 +55,7 @@
 		E13C95A32ECCBD1200D77F31 /* ConversationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationDetailView.swift; sourceTree = "<group>"; };
 		E13C95BD2ECCCA8E00D77F31 /* KeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyStore.swift; sourceTree = "<group>"; };
 		E13C95D12ECCD64A00D77F31 /* ConversationLinkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationLinkStore.swift; sourceTree = "<group>"; };
+		E13C95D32ECE66DB00D77F31 /* ConversationNameStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationNameStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -118,6 +120,7 @@
 		1A1A1A381A1A1A1A1A1A1A38 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				E13C95D32ECE66DB00D77F31 /* ConversationNameStore.swift */,
 				E13C95BD2ECCCA8E00D77F31 /* KeyStore.swift */,
 				1A1A1A271A1A1A1A1A1A1A27 /* CryptoManager.swift */,
 				1A1A1A291A1A1A1A1A1A1A29 /* APIService.swift */,
@@ -215,6 +218,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E13C95D42ECE66DB00D77F31 /* ConversationNameStore.swift in Sources */,
 				E13C95D22ECCD64A00D77F31 /* ConversationLinkStore.swift in Sources */,
 				E13C95BE2ECCCA8E00D77F31 /* KeyStore.swift in Sources */,
 				E13C95A52ECCBD1200D77F31 /* ConversationShareView.swift in Sources */,
