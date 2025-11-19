@@ -96,4 +96,8 @@ public class Conversation {
     public boolean isActive() {
         return status == ConversationStatus.ACTIVE && !isExpired();
     }
+
+    public boolean isDeleted() {
+        return status == ConversationStatus.DELETED;
+    }
 }

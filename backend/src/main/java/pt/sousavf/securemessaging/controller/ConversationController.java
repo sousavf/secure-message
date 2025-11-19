@@ -58,6 +58,7 @@ public class ConversationController {
 
     /**
      * Get a specific conversation by ID
+     * Returns 404 if conversation is deleted or not found
      */
     @GetMapping("/{conversationId}")
     public ResponseEntity<?> getConversation(
@@ -65,6 +66,11 @@ public class ConversationController {
         try {
             var conversation = conversationService.getConversation(conversationId);
             if (conversation.isPresent()) {
+                // Check if conversation is deleted
+                if (conversation.get().isDeleted()) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ErrorResponse("Conversation not found"));
+                }
                 return ResponseEntity.ok(ConversationResponse.fromEntity(conversation.get()));
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)

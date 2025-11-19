@@ -155,8 +155,10 @@ struct ConversationListView: View {
                     print("[DEBUG] ConversationListView - Loaded joined conversation: \(joinedId)")
                 } catch {
                     print("[WARNING] ConversationListView - Failed to load joined conversation \(joinedId): \(error)")
-                    // Remove expired link if conversation no longer exists
+                    // Remove expired link if conversation no longer exists (e.g., deleted by initiator)
                     ConversationLinkStore.shared.deleteLink(for: joinedId)
+                    KeyStore.shared.deleteKey(for: joinedId)
+                    print("[DEBUG] ConversationListView - Cleaned up local storage for deleted conversation: \(joinedId)")
                 }
             }
 
