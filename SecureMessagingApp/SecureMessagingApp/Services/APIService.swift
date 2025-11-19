@@ -543,12 +543,17 @@ class APIService: ObservableObject {
     }
 
     func getConversationMessagesSince(conversationId: UUID, since: Date) async throws -> [ConversationMessage] {
-        // Format the date as ISO8601 string for the API
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        // Format the date as LocalDateTime string for the API (Spring Boot expects: yyyy-MM-dd'T'HH:mm:ss)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         let sinceString = formatter.string(from: since)
 
-        var urlRequest = try createRequest(for: "/api/conversations/\(conversationId.uuidString)/messages?since=\(sinceString)")
+        // URL encode the since parameter
+        let encodedSince = sinceString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? sinceString
+
+        var urlRequest = try createRequest(for: "/api/conversations/\(conversationId.uuidString)/messages?since=\(encodedSince)")
         print("[DEBUG] getConversationMessagesSince - Request URL: \(urlRequest.url?.absoluteString ?? "unknown")")
 
         let (data, response) = try await session.data(for: urlRequest)

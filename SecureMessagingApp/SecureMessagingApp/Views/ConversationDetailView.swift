@@ -18,7 +18,7 @@ struct ConversationDetailView: View {
 
     // Polling state
     @State private var pollTimer: Timer?
-    @State private var lastPollTimestamp: Date?
+    @State private var lastMessageTimestamp: Date?
     private let pollInterval: TimeInterval = 5.0 // Poll every 5 seconds
 
     var body: some View {
@@ -148,7 +148,17 @@ struct ConversationDetailView: View {
 
             messages = try await apiService.getConversationMessages(conversationId: conversation.id)
             print("[DEBUG] ConversationDetailView - Loaded \(messages.count) messages")
-            lastPollTimestamp = Date()
+
+            // Track the timestamp of the most recent message for incremental polling
+            if let lastMessage = messages.last {
+                lastMessageTimestamp = lastMessage.createdAt
+                print("[DEBUG] ConversationDetailView - Last message timestamp: \(String(describing: lastMessage.createdAt))")
+            } else {
+                // No messages yet, use current time
+                lastMessageTimestamp = Date()
+                print("[DEBUG] ConversationDetailView - No messages, using current time as baseline")
+            }
+
             errorMessage = nil
         } catch let error as NetworkError {
             print("[ERROR] ConversationDetailView - NetworkError: \(error)")
@@ -165,10 +175,7 @@ struct ConversationDetailView: View {
         // Stop any existing timer first
         stopPolling()
 
-        // Set initial poll timestamp
-        lastPollTimestamp = Date()
-
-        // Start polling timer
+        // Start polling timer (lastMessageTimestamp already set by loadMessages)
         pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { _ in
             Task {
                 await pollForNewMessages()
@@ -186,18 +193,18 @@ struct ConversationDetailView: View {
 
     @MainActor
     private func pollForNewMessages() async {
-        guard let lastPoll = lastPollTimestamp else {
-            print("[DEBUG] ConversationDetailView - No lastPollTimestamp, skipping poll")
+        guard let lastTimestamp = lastMessageTimestamp else {
+            print("[DEBUG] ConversationDetailView - No lastMessageTimestamp, skipping poll")
             return
         }
 
         do {
-            print("[DEBUG] ConversationDetailView - Polling for new messages since: \(lastPoll)")
+            print("[DEBUG] ConversationDetailView - Polling for new messages since: \(lastTimestamp)")
 
-            // Fetch only messages created after the last poll
+            // Fetch only messages created after the last message we have
             let newMessages = try await apiService.getConversationMessagesSince(
                 conversationId: conversation.id,
-                since: lastPoll
+                since: lastTimestamp
             )
 
             if !newMessages.isEmpty {
@@ -206,11 +213,13 @@ struct ConversationDetailView: View {
                 // Add new messages to the list
                 messages.append(contentsOf: newMessages)
 
-                // Update last poll timestamp
-                lastPollTimestamp = Date()
+                // Update timestamp to the most recent message
+                if let lastMessage = newMessages.last {
+                    lastMessageTimestamp = lastMessage.createdAt
+                    print("[DEBUG] ConversationDetailView - Updated last message timestamp: \(String(describing: lastMessage.createdAt))")
+                }
             } else {
                 print("[DEBUG] ConversationDetailView - No new messages in this poll")
-                lastPollTimestamp = Date()
             }
 
             // Also check if other participants are still active (detect when initiator deletes)
