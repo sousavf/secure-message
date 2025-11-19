@@ -231,10 +231,11 @@ struct ConversationDetailView: View {
                 print("[DEBUG] ConversationDetailView - No new messages in this poll")
             }
 
-            // Also check if other participants are still active (detect when initiator deletes)
-            // This is a secondary check - the primary detection happens via 404 on conversation fetch
+            // Check if conversation still exists (detect when initiator deletes)
+            // This is critical to detect deletions and auto-cleanup locally
             print("[DEBUG] ConversationDetailView - Checking if conversation is still active")
-            _ = try await apiService.getConversation(id: conversation.id)
+            let conversationStatus = try await apiService.getConversation(id: conversation.id)
+            print("[DEBUG] ConversationDetailView - Conversation status verified: \(conversationStatus.status)")
 
         } catch let error as NetworkError {
             if case .conversationNotFound = error {

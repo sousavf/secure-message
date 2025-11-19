@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -127,11 +128,13 @@ public class MessageController {
             // If 'since' parameter is provided, fetch only messages created after that time
             if (since != null && !since.isEmpty()) {
                 try {
-                    LocalDateTime sinceTime = LocalDateTime.parse(since);
+                    // Parse the 'since' parameter with the expected format
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+                    LocalDateTime sinceTime = LocalDateTime.parse(since, formatter);
                     messages = messageService.getConversationMessagesSince(conversationId, sinceTime);
                     logger.info("Retrieved {} incremental messages since {}", messages.size(), since);
                 } catch (Exception e) {
-                    logger.warn("Invalid 'since' parameter format: {}", since);
+                    logger.warn("Invalid 'since' parameter format: {} - error: {}", since, e.getMessage());
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ErrorMessage("Invalid 'since' parameter. Use ISO-8601 format: 2025-11-19T18:30:00"));
                 }
