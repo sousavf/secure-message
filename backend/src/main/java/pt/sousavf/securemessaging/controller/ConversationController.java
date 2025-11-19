@@ -230,6 +230,29 @@ public class ConversationController {
         }
     }
 
+    /**
+     * Leave a conversation (for any participant, including initiator)
+     * Marks the participant as departed but does not delete the conversation
+     */
+    @PostMapping("/{conversationId}/leave")
+    public ResponseEntity<?> leaveConversation(
+            @PathVariable UUID conversationId,
+            @RequestHeader("X-Device-ID") String deviceId) {
+        try {
+            logger.info("Device leaving conversation - Conversation: {}, Device: {}", conversationId, deviceId);
+            conversationService.leaveConversation(conversationId, deviceId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid request: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error leaving conversation", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Error leaving conversation: " + e.getMessage()));
+        }
+    }
+
     // Response DTOs
 
     public static class ConversationResponse {

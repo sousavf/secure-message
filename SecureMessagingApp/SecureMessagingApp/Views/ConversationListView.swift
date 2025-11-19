@@ -44,10 +44,18 @@ struct ConversationListView: View {
                                         .swipeActions(edge: .trailing) {
                                             Button(role: .destructive) {
                                                 Task {
-                                                    await deleteConversation(conversation.id)
+                                                    if conversation.isCreatedByCurrentDevice {
+                                                        await deleteConversation(conversation.id)
+                                                    } else {
+                                                        await leaveConversation(conversation.id)
+                                                    }
                                                 }
                                             } label: {
-                                                Label("Delete", systemImage: "trash")
+                                                if conversation.isCreatedByCurrentDevice {
+                                                    Label("Delete", systemImage: "trash")
+                                                } else {
+                                                    Label("Leave", systemImage: "person.slash.fill")
+                                                }
                                             }
                                         }
                                 }
@@ -136,6 +144,7 @@ struct ConversationListView: View {
                 do {
                     let joinedConversation = try await apiService.getConversation(id: joinedId)
                     var updatedConversation = joinedConversation
+                    updatedConversation.isCreatedByCurrentDevice = false // Mark as joined, not created
 
                     // Load encryption key
                     if let storedKey = KeyStore.shared.retrieveKey(for: joinedId) {
@@ -207,6 +216,7 @@ struct ConversationListView: View {
                             print("[DEBUG] ConversationListView - Conversation fetched and joined successfully")
                             // Add to conversations list
                             var updatedConversation = conversation
+                            updatedConversation.isCreatedByCurrentDevice = false // Mark as joined, not created
                             if let key = encryptionKey, !key.isEmpty {
                                 updatedConversation.encryptionKey = key
                             }
@@ -251,6 +261,24 @@ struct ConversationListView: View {
             errorMessage = error.localizedDescription
         } catch {
             errorMessage = "Failed to delete conversation"
+        }
+    }
+
+    @MainActor
+    private func leaveConversation(_ id: UUID) async {
+        do {
+            try await apiService.leaveConversation(id: id, deviceId: deviceId)
+            conversations.removeAll { $0.id == id }
+
+            // Remove from local storage
+            ConversationLinkStore.shared.deleteLink(for: id)
+            KeyStore.shared.deleteKey(for: id)
+
+            errorMessage = nil
+        } catch let error as NetworkError {
+            errorMessage = error.localizedDescription
+        } catch {
+            errorMessage = "Failed to leave conversation"
         }
     }
 }

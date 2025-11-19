@@ -406,6 +406,30 @@ class APIService: ObservableObject {
         }
     }
 
+    func leaveConversation(id: UUID, deviceId: String) async throws {
+        var urlRequest = try createRequest(for: "/api/conversations/\(id.uuidString)/leave", method: "POST")
+        addDeviceIdHeader(to: &urlRequest, deviceId: deviceId)
+
+        let (_, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.unknownError
+        }
+
+        switch httpResponse.statusCode {
+        case 200, 204:
+            return
+        case 404:
+            throw NetworkError.conversationNotFound
+        case 400...499:
+            throw NetworkError.serverError(httpResponse.statusCode)
+        case 500...599:
+            throw NetworkError.serverError(httpResponse.statusCode)
+        default:
+            throw NetworkError.unknownError
+        }
+    }
+
     func generateConversationShareLink(conversationId: UUID, deviceId: String) async throws -> String {
         var urlRequest = try createRequest(for: "/api/conversations/\(conversationId.uuidString)/share", method: "POST")
         addDeviceIdHeader(to: &urlRequest, deviceId: deviceId)

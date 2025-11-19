@@ -67,6 +67,44 @@ struct Conversation: Identifiable, Codable {
     // Note: encryptionKey is NOT transmitted over the wire
     // It's generated and stored locally on the client only
     var encryptionKey: String? // Master encryption key stored locally only (not from backend)
+    // Track whether this conversation was created by the current device (initiator) or joined (secondary)
+    // This is computed locally and not transmitted
+    var isCreatedByCurrentDevice: Bool = true
+
+    enum CodingKeys: String, CodingKey {
+        case id, initiatorUserId, status, createdAt, expiresAt
+    }
+
+    // Regular initializer for creating Conversation instances directly (non-Codable)
+    init(id: UUID, initiatorUserId: UUID?, status: String, createdAt: Date, expiresAt: Date) {
+        self.id = id
+        self.initiatorUserId = initiatorUserId
+        self.status = status
+        self.createdAt = createdAt
+        self.expiresAt = expiresAt
+        self.encryptionKey = nil
+        self.isCreatedByCurrentDevice = true
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        initiatorUserId = try container.decodeIfPresent(UUID.self, forKey: .initiatorUserId)
+        status = try container.decode(String.self, forKey: .status)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        expiresAt = try container.decode(Date.self, forKey: .expiresAt)
+        encryptionKey = nil
+        isCreatedByCurrentDevice = true // Default to true, will be set by the app
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(initiatorUserId, forKey: .initiatorUserId)
+        try container.encode(status, forKey: .status)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(expiresAt, forKey: .expiresAt)
+    }
 
     var ttlHours: Int {
         let hours = Int(expiresAt.timeIntervalSince(createdAt) / 3600)

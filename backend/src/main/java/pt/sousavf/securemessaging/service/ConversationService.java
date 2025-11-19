@@ -243,4 +243,34 @@ public class ConversationService {
     public List<ConversationParticipant> getActiveParticipants(UUID conversationId) {
         return participantRepository.findActiveParticipants(conversationId);
     }
+
+    /**
+     * Leave a conversation (mark participant as departed)
+     * This allows any participant to leave without deleting the conversation
+     * Used when a secondary participant wants to leave or initiator wants to leave without full deletion
+     */
+    @Transactional
+    public void leaveConversation(UUID conversationId, String deviceId) {
+        logger.info("Participant leaving conversation - Conversation: {}, Device: {}", conversationId, deviceId);
+
+        // Check if conversation exists
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+
+        // Find participant
+        Optional<ConversationParticipant> participantOpt = participantRepository.findByConversationAndDevice(conversationId, deviceId);
+
+        if (participantOpt.isEmpty()) {
+            throw new IllegalArgumentException("Device is not a participant in this conversation");
+        }
+
+        ConversationParticipant participant = participantOpt.get();
+
+        // Mark as departed
+        if (participant.isActive()) {
+            participant.markAsDeparted();
+            participantRepository.save(participant);
+            logger.info("Participant marked as departed - Conversation: {}, Device: {}", conversationId, deviceId);
+        }
+    }
 }
