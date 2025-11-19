@@ -43,7 +43,7 @@ struct ConversationDetailView: View {
                         ScrollViewReader { scrollProxy in
                             List {
                                 ForEach(messages) { message in
-                                    ConversationMessageRow(message: message, conversationEncryptionKey: conversation.encryptionKey)
+                                    ConversationMessageRow(message: message, conversationEncryptionKey: conversation.encryptionKey, deviceId: deviceId)
                                         .id(message.id)
                                         .listRowSeparator(.hidden)
                                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
@@ -210,10 +210,19 @@ struct ConversationDetailView: View {
             if !newMessages.isEmpty {
                 print("[DEBUG] ConversationDetailView - Received \(newMessages.count) new messages")
 
-                // Add new messages to the list
-                messages.append(contentsOf: newMessages)
+                // Filter out messages that already exist (by ID) to prevent duplicates
+                let existingIds = Set(messages.map { $0.id })
+                let uniqueNewMessages = newMessages.filter { !existingIds.contains($0.id) }
 
-                // Update timestamp to the most recent message
+                if !uniqueNewMessages.isEmpty {
+                    print("[DEBUG] ConversationDetailView - Adding \(uniqueNewMessages.count) unique new messages (filtered \(newMessages.count - uniqueNewMessages.count) duplicates)")
+                    // Add only unique new messages to the list
+                    messages.append(contentsOf: uniqueNewMessages)
+                } else {
+                    print("[DEBUG] ConversationDetailView - All \(newMessages.count) messages were duplicates, skipping")
+                }
+
+                // Update timestamp to the most recent message (whether unique or not)
                 if let lastMessage = newMessages.last {
                     lastMessageTimestamp = lastMessage.createdAt
                     print("[DEBUG] ConversationDetailView - Updated last message timestamp: \(String(describing: lastMessage.createdAt))")
@@ -297,6 +306,13 @@ struct ConversationDetailView: View {
             newMessage.decryptedContent = trimmedMessage
 
             messages.append(newMessage)
+
+            // Update polling timestamp to the newly sent message's timestamp
+            if let createdAt = newMessage.createdAt {
+                lastMessageTimestamp = createdAt
+                print("[DEBUG] sendMessage - Updated lastMessageTimestamp to newly sent message: \(createdAt)")
+            }
+
             messageText = ""
             messageFieldFocused = false
             errorMessage = nil
@@ -355,53 +371,28 @@ struct ConversationDetailView: View {
 struct ConversationMessageRow: View {
     let message: ConversationMessage
     let conversationEncryptionKey: String?
+    let deviceId: String
     @State private var decryptedText: String?
 
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                if let decryptedContent = decryptedText ?? message.decryptedContent {
-                    // Display decrypted message
-                    Text(decryptedContent)
-                        .padding(12)
-                        .background(Color.indigo.opacity(0.1))
-                        .cornerRadius(12)
-                        .foregroundColor(.primary)
-                } else if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag {
-                    // Try to decrypt using conversation key or message's own key
-                    let keyToUse = message.encryptionKey ?? conversationEncryptionKey
-                    if let keyString = keyToUse {
-                        Text(attemptDecryption(ciphertext: ciphertext, nonce: nonce, tag: tag, keyString: keyString) ?? "[Encrypted Message]")
-                            .padding(12)
-                            .background(Color.indigo.opacity(0.1))
-                            .cornerRadius(12)
-                            .foregroundColor(.primary)
-                    } else {
-                        Text("[Encrypted Message]")
-                            .padding(12)
-                            .background(Color.indigo.opacity(0.1))
-                            .cornerRadius(12)
-                            .italic()
-                            .foregroundColor(.secondary)
-                    }
-                } else {
-                    // Can't decrypt - show placeholder
-                    Text("[Encrypted Message]")
-                        .padding(12)
-                        .background(Color.indigo.opacity(0.1))
-                        .cornerRadius(12)
-                        .italic()
-                        .foregroundColor(.secondary)
-                }
+    var isSentByCurrentDevice: Bool {
+        message.senderDeviceId == deviceId
+    }
 
-                if let createdAt = message.createdAt {
-                    Text(createdAt.formatted(date: .omitted, time: .shortened))
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                }
+    var body: some View {
+        HStack(spacing: 8) {
+            if isSentByCurrentDevice {
+                // Sent message - right-aligned
+                Spacer()
+                messageBubble
+                    .foregroundColor(.white)
+            } else {
+                // Received message - left-aligned
+                messageBubble
+                    .foregroundColor(.primary)
+                Spacer()
             }
-            Spacer()
         }
+        .padding(.horizontal, 12)
         .padding(.vertical, 4)
         .onAppear {
             // Try to decrypt on appearance if we have the key
@@ -409,6 +400,75 @@ struct ConversationMessageRow: View {
                 let keyToUse = message.encryptionKey ?? conversationEncryptionKey
                 if let keyString = keyToUse {
                     decryptedText = attemptDecryption(ciphertext: ciphertext, nonce: nonce, tag: tag, keyString: keyString)
+                }
+            }
+        }
+    }
+
+    private var messageBubble: some View {
+        VStack(alignment: isSentByCurrentDevice ? .trailing : .leading, spacing: 4) {
+            // Message content bubble
+            if let decryptedContent = decryptedText ?? message.decryptedContent {
+                Text(decryptedContent)
+                    .padding(12)
+                    .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
+                    .cornerRadius(16)
+            } else if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag {
+                let keyToUse = message.encryptionKey ?? conversationEncryptionKey
+                if let keyString = keyToUse {
+                    if let decrypted = attemptDecryption(ciphertext: ciphertext, nonce: nonce, tag: tag, keyString: keyString) {
+                        Text(decrypted)
+                            .padding(12)
+                            .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
+                            .cornerRadius(16)
+                    } else {
+                        Text("[Unable to decrypt]")
+                            .padding(12)
+                            .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
+                            .cornerRadius(16)
+                            .italic()
+                    }
+                } else {
+                    Text("[Encrypted Message]")
+                        .padding(12)
+                        .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
+                        .cornerRadius(16)
+                        .italic()
+                }
+            } else {
+                Text("[Encrypted Message]")
+                    .padding(12)
+                    .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
+                    .cornerRadius(16)
+                    .italic()
+            }
+
+            // Time and status row
+            HStack(spacing: 4) {
+                if let createdAt = message.createdAt {
+                    Text(createdAt.formatted(date: .omitted, time: .shortened))
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                }
+
+                // Status indicators for sent messages only
+                if isSentByCurrentDevice {
+                    if message.readAt != nil {
+                        // Double blue check for read
+                        HStack(spacing: -2) {
+                            Text("✓")
+                                .font(.caption2)
+                                .foregroundColor(.blue)
+                            Text("✓")
+                                .font(.caption2)
+                                .foregroundColor(.blue)
+                        }
+                    } else {
+                        // Single check for delivered
+                        Text("✓")
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
                 }
             }
         }

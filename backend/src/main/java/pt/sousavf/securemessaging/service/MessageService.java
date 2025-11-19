@@ -213,7 +213,7 @@ public class MessageService {
         Message savedMessage = messageRepository.save(message);
         logger.info("Conversation message created with ID: {}, conversation: {}", savedMessage.getId(), conversationId);
 
-        return MessageResponse.createResponse(savedMessage.getId());
+        return MessageResponse.fromMessage(savedMessage);
     }
 
     /**

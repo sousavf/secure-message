@@ -101,13 +101,14 @@ struct ConversationMessage: Identifiable, Codable {
     let conversationId: UUID?
     let expiresAt: Date?
     let readAt: Date?
+    let senderDeviceId: String?  // Track who sent this message
 
-    // Local storage for encryption key (not sent to/from backend)
+    // Local storage for encryption key and decrypted content (not sent to/from backend)
     var encryptionKey: String? = nil
     var decryptedContent: String? = nil
 
     enum CodingKeys: String, CodingKey {
-        case id, ciphertext, nonce, tag, createdAt, consumed, conversationId, expiresAt, readAt
+        case id, ciphertext, nonce, tag, createdAt, consumed, conversationId, expiresAt, readAt, senderDeviceId
     }
 
     init(from decoder: Decoder) throws {
@@ -121,6 +122,7 @@ struct ConversationMessage: Identifiable, Codable {
         conversationId = try container.decodeIfPresent(UUID.self, forKey: .conversationId)
         expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
         readAt = try container.decodeIfPresent(Date.self, forKey: .readAt)
+        senderDeviceId = try container.decodeIfPresent(String.self, forKey: .senderDeviceId)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -134,6 +136,7 @@ struct ConversationMessage: Identifiable, Codable {
         try container.encodeIfPresent(conversationId, forKey: .conversationId)
         try container.encodeIfPresent(expiresAt, forKey: .expiresAt)
         try container.encodeIfPresent(readAt, forKey: .readAt)
+        try container.encodeIfPresent(senderDeviceId, forKey: .senderDeviceId)
     }
 
     // Check if message is expired

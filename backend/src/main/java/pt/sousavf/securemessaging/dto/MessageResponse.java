@@ -17,6 +17,7 @@ public class MessageResponse {
     private LocalDateTime expiresAt;
     private LocalDateTime readAt;
     private boolean consumed;
+    private String senderDeviceId;
 
     public MessageResponse() {}
 
@@ -29,6 +30,7 @@ public class MessageResponse {
         this.expiresAt = message.getExpiresAt();
         this.readAt = message.getReadAt();
         this.consumed = message.isConsumed();
+        this.senderDeviceId = message.getSenderDeviceId();
     }
 
     public static MessageResponse fromMessage(Message message) {
@@ -103,5 +105,13 @@ public class MessageResponse {
 
     public void setConsumed(boolean consumed) {
         this.consumed = consumed;
+    }
+
+    public String getSenderDeviceId() {
+        return senderDeviceId;
+    }
+
+    public void setSenderDeviceId(String senderDeviceId) {
+        this.senderDeviceId = senderDeviceId;
     }
 }
