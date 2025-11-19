@@ -16,6 +16,11 @@ struct ConversationDetailView: View {
     @State private var showShareModal = false
     @FocusState private var messageFieldFocused: Bool
 
+    // Polling state
+    @State private var pollTimer: Timer?
+    @State private var lastPollTimestamp: Date?
+    private let pollInterval: TimeInterval = 5.0 // Poll every 5 seconds
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -113,6 +118,10 @@ struct ConversationDetailView: View {
                 Task {
                     await loadMessages()
                 }
+                startPolling()
+            }
+            .onDisappear {
+                stopPolling()
             }
             .refreshable {
                 await loadMessages()
@@ -139,6 +148,7 @@ struct ConversationDetailView: View {
 
             messages = try await apiService.getConversationMessages(conversationId: conversation.id)
             print("[DEBUG] ConversationDetailView - Loaded \(messages.count) messages")
+            lastPollTimestamp = Date()
             errorMessage = nil
         } catch let error as NetworkError {
             print("[ERROR] ConversationDetailView - NetworkError: \(error)")
@@ -146,6 +156,85 @@ struct ConversationDetailView: View {
         } catch {
             print("[ERROR] ConversationDetailView - Failed to load messages: \(error)")
             errorMessage = "Failed to load messages"
+        }
+    }
+
+    private func startPolling() {
+        print("[DEBUG] ConversationDetailView - Starting polling for conversation: \(conversation.id)")
+
+        // Stop any existing timer first
+        stopPolling()
+
+        // Set initial poll timestamp
+        lastPollTimestamp = Date()
+
+        // Start polling timer
+        pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { _ in
+            Task {
+                await pollForNewMessages()
+            }
+        }
+    }
+
+    private func stopPolling() {
+        if pollTimer != nil {
+            print("[DEBUG] ConversationDetailView - Stopping polling for conversation: \(conversation.id)")
+            pollTimer?.invalidate()
+            pollTimer = nil
+        }
+    }
+
+    @MainActor
+    private func pollForNewMessages() async {
+        guard let lastPoll = lastPollTimestamp else {
+            print("[DEBUG] ConversationDetailView - No lastPollTimestamp, skipping poll")
+            return
+        }
+
+        do {
+            print("[DEBUG] ConversationDetailView - Polling for new messages since: \(lastPoll)")
+
+            // Fetch only messages created after the last poll
+            let newMessages = try await apiService.getConversationMessagesSince(
+                conversationId: conversation.id,
+                since: lastPoll
+            )
+
+            if !newMessages.isEmpty {
+                print("[DEBUG] ConversationDetailView - Received \(newMessages.count) new messages")
+
+                // Add new messages to the list
+                messages.append(contentsOf: newMessages)
+
+                // Update last poll timestamp
+                lastPollTimestamp = Date()
+            } else {
+                print("[DEBUG] ConversationDetailView - No new messages in this poll")
+                lastPollTimestamp = Date()
+            }
+
+            // Also check if other participants are still active (detect when initiator deletes)
+            // This is a secondary check - the primary detection happens via 404 on conversation fetch
+            print("[DEBUG] ConversationDetailView - Checking if conversation is still active")
+            _ = try await apiService.getConversation(id: conversation.id)
+
+        } catch let error as NetworkError {
+            if case .conversationNotFound = error {
+                print("[ERROR] ConversationDetailView - Conversation no longer exists (deleted or expired)")
+                // Conversation was deleted - clean up locally
+                stopPolling()
+                await MainActor.run {
+                    ConversationLinkStore.shared.deleteLink(for: conversation.id)
+                    KeyStore.shared.deleteKey(for: conversation.id)
+                    errorMessage = "This conversation has been deleted"
+                }
+            } else {
+                print("[ERROR] ConversationDetailView - Polling error: \(error)")
+                // Don't show other polling errors to user - silently continue polling
+            }
+        } catch {
+            print("[ERROR] ConversationDetailView - Unexpected polling error: \(error)")
+            // Don't show polling errors to user - silently continue polling
         }
     }
 

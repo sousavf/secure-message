@@ -193,14 +193,18 @@ struct ConversationListView: View {
                 selectedConversation = existingConversation
             } else {
                 print("[DEBUG] ConversationListView - Conversation not in list, fetching from backend")
-                // Fetch the conversation from the backend
+                // Fetch the conversation from the backend and register as participant
                 Task {
                     do {
                         print("[DEBUG] ConversationListView - Fetching conversation from backend: \(conversationId)")
                         let conversation = try await apiService.getConversation(id: conversationId)
 
+                        // Register this device as a participant
+                        print("[DEBUG] ConversationListView - Registering device as participant")
+                        try await apiService.joinConversation(conversationId: conversationId, deviceId: deviceId)
+
                         await MainActor.run {
-                            print("[DEBUG] ConversationListView - Conversation fetched successfully")
+                            print("[DEBUG] ConversationListView - Conversation fetched and joined successfully")
                             // Add to conversations list
                             var updatedConversation = conversation
                             if let key = encryptionKey, !key.isEmpty {
@@ -209,8 +213,17 @@ struct ConversationListView: View {
                             conversations.insert(updatedConversation, at: 0)
                             selectedConversation = updatedConversation
                         }
+                    } catch let error as NetworkError {
+                        print("[ERROR] ConversationListView - Failed to fetch conversation or join: \(error)")
+                        await MainActor.run {
+                            if case .linkAlreadyConsumed(let message) = error {
+                                errorMessage = message
+                            } else {
+                                errorMessage = error.localizedDescription
+                            }
+                        }
                     } catch {
-                        print("[ERROR] ConversationListView - Failed to fetch conversation: \(error)")
+                        print("[ERROR] ConversationListView - Failed to fetch conversation or join: \(error)")
                         await MainActor.run {
                             errorMessage = "Failed to join conversation. Please try again."
                         }

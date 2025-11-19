@@ -53,6 +53,12 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     List<Message> findActiveByConversationId(@Param("conversationId") UUID conversationId);
 
     /**
+     * Find active messages in a conversation created after a specific timestamp (for polling)
+     */
+    @Query("SELECT m FROM Message m WHERE m.conversationId = :conversationId AND m.expiresAt > CURRENT_TIMESTAMP AND m.createdAt > :since ORDER BY m.createdAt ASC")
+    List<Message> findActiveByConversationIdAndCreatedAfter(@Param("conversationId") UUID conversationId, @Param("since") LocalDateTime since);
+
+    /**
      * Delete all messages for a conversation
      */
     @Modifying

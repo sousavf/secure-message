@@ -4,10 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.sousavf.securemessaging.entity.Conversation;
+import pt.sousavf.securemessaging.entity.ConversationParticipant;
 import pt.sousavf.securemessaging.entity.User;
 import pt.sousavf.securemessaging.repository.ConversationRepository;
+import pt.sousavf.securemessaging.repository.ConversationParticipantRepository;
 import pt.sousavf.securemessaging.repository.MessageRepository;
 import pt.sousavf.securemessaging.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,8 +21,13 @@ import java.util.UUID;
 @Service
 public class ConversationService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ConversationService.class);
+
     @Autowired
     private ConversationRepository conversationRepository;
+
+    @Autowired
+    private ConversationParticipantRepository participantRepository;
 
     @Autowired
     private MessageRepository messageRepository;
@@ -34,6 +43,8 @@ public class ConversationService {
      */
     @Transactional
     public Conversation createConversation(String deviceId, int ttlHours) {
+        logger.info("Creating new conversation for device: {}", deviceId);
+
         // Auto-create user if doesn't exist
         User user = userRepository.findByDeviceId(deviceId)
             .orElseGet(() -> {
@@ -51,7 +62,18 @@ public class ConversationService {
 
         // Create and save conversation
         Conversation conversation = new Conversation(user.getId(), expiresAt);
-        return conversationRepository.save(conversation);
+        Conversation savedConversation = conversationRepository.save(conversation);
+
+        // Track the initiator as a participant
+        ConversationParticipant initiatorParticipant = new ConversationParticipant(
+            savedConversation.getId(),
+            deviceId,
+            true // isInitiator
+        );
+        participantRepository.save(initiatorParticipant);
+        logger.info("Conversation created: {}, initiator device: {}", savedConversation.getId(), deviceId);
+
+        return savedConversation;
     }
 
     /**
@@ -87,9 +109,12 @@ public class ConversationService {
 
     /**
      * Delete a conversation (only initiator can delete)
+     * This marks all participants as departed
      */
     @Transactional
     public void deleteConversation(UUID conversationId, String deviceId) {
+        logger.info("Attempting to delete conversation: {} from device: {}", conversationId, deviceId);
+
         Conversation conversation = conversationRepository.findById(conversationId)
             .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
 
@@ -101,9 +126,20 @@ public class ConversationService {
             throw new IllegalStateException("Only conversation initiator can delete it");
         }
 
+        // Mark all participants as departed
+        List<ConversationParticipant> participants = participantRepository.findByConversationId(conversationId);
+        for (ConversationParticipant participant : participants) {
+            if (participant.isActive()) {
+                participant.markAsDeparted();
+                participantRepository.save(participant);
+                logger.info("Marked participant as departed - Conversation: {}, Device: {}", conversationId, participant.getDeviceId());
+            }
+        }
+
         // Mark as deleted
         conversation.setStatus(Conversation.ConversationStatus.DELETED);
         conversationRepository.save(conversation);
+        logger.info("Conversation marked as deleted: {}", conversationId);
 
         // Delete all associated messages
         messageRepository.deleteByConversationId(conversationId);
@@ -145,5 +181,66 @@ public class ConversationService {
         LocalDateTime cutoffTime = LocalDateTime.now().minusHours(1);
         List<Conversation> deletedConversations = conversationRepository.findDeletedConversationsOlderThan(cutoffTime);
         conversationRepository.deleteAll(deletedConversations);
+    }
+
+    /**
+     * Register a device as a participant in a conversation (when joining via QR code)
+     * Only allows ONE secondary participant (creator + 1 joiner = 2 total)
+     */
+    @Transactional
+    public void registerParticipant(UUID conversationId, String deviceId) {
+        logger.info("Registering participant - Conversation: {}, Device: {}", conversationId, deviceId);
+
+        // Check if conversation exists and is active
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+
+        if (!conversation.isActive()) {
+            throw new IllegalStateException("Conversation is not active");
+        }
+
+        // Check if participant already exists
+        Optional<ConversationParticipant> existingParticipant = participantRepository.findByConversationAndDevice(conversationId, deviceId);
+
+        if (existingParticipant.isPresent()) {
+            ConversationParticipant participant = existingParticipant.get();
+            // If they were previously departed, mark them as rejoined
+            if (!participant.isActive()) {
+                participant.setDepartedAt(null);
+                participantRepository.save(participant);
+                logger.info("Participant rejoined conversation - Conversation: {}, Device: {}", conversationId, deviceId);
+            }
+        } else {
+            // Check if link has already been consumed (another device already joined)
+            boolean linkAlreadyConsumed = participantRepository.hasSecondaryParticipant(conversationId);
+            if (linkAlreadyConsumed) {
+                logger.warn("Conversation link already consumed - Conversation: {}", conversationId);
+                throw new IllegalStateException("This conversation link has already been used. Conversations can only have 2 participants (creator and 1 joiner)");
+            }
+
+            // Add new participant and mark link as consumed
+            ConversationParticipant newParticipant = new ConversationParticipant(
+                conversationId,
+                deviceId,
+                false // not initiator
+            );
+            newParticipant.markLinkAsConsumed();
+            participantRepository.save(newParticipant);
+            logger.info("New participant added and link consumed - Conversation: {}, Device: {}", conversationId, deviceId);
+        }
+    }
+
+    /**
+     * Check if a device is an active participant in a conversation
+     */
+    public boolean isActiveParticipant(UUID conversationId, String deviceId) {
+        return participantRepository.isActiveParticipant(conversationId, deviceId);
+    }
+
+    /**
+     * Get active participants in a conversation
+     */
+    public List<ConversationParticipant> getActiveParticipants(UUID conversationId) {
+        return participantRepository.findActiveParticipants(conversationId);
     }
 }

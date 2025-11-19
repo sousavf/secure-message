@@ -5,9 +5,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.sousavf.securemessaging.dto.CreateConversationRequest;
+import pt.sousavf.securemessaging.dto.ParticipantStatusResponse;
 import pt.sousavf.securemessaging.entity.Conversation;
+import pt.sousavf.securemessaging.entity.ConversationParticipant;
 import pt.sousavf.securemessaging.service.ConversationService;
 import pt.sousavf.securemessaging.service.ShareService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +19,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/conversations")
 public class ConversationController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ConversationController.class);
 
     @Autowired
     private ConversationService conversationService;
@@ -151,6 +157,79 @@ public class ConversationController {
         }
     }
 
+    /**
+     * Register a device as a participant when joining a conversation via QR code
+     */
+    @PostMapping("/{conversationId}/join")
+    public ResponseEntity<?> joinConversation(
+            @PathVariable UUID conversationId,
+            @RequestHeader("X-Device-ID") String deviceId) {
+        try {
+            logger.info("Device joining conversation - Conversation: {}, Device: {}", conversationId, deviceId);
+            conversationService.registerParticipant(conversationId, deviceId);
+            return ResponseEntity.ok(new ErrorResponse("Successfully joined conversation"));
+        } catch (IllegalStateException e) {
+            logger.warn("Cannot join conversation: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid conversation: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error joining conversation", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Error joining conversation: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Get status of all participants in a conversation
+     */
+    @GetMapping("/{conversationId}/participants")
+    public ResponseEntity<?> getParticipants(
+            @PathVariable UUID conversationId) {
+        try {
+            logger.info("Fetching participants for conversation: {}", conversationId);
+            List<ConversationParticipant> participants = conversationService.getActiveParticipants(conversationId);
+
+            List<ParticipantStatusResponse> responses = participants.stream()
+                .map(p -> new ParticipantStatusResponse(
+                    p.getConversationId(),
+                    p.getDeviceId(),
+                    p.isInitiator(),
+                    p.isActive(),
+                    p.getJoinedAt(),
+                    p.getDepartedAt()
+                ))
+                .toList();
+
+            return ResponseEntity.ok(responses);
+        } catch (Exception e) {
+            logger.error("Error fetching participants", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Error fetching participants: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Check if a specific device is an active participant
+     */
+    @GetMapping("/{conversationId}/participants/{deviceId}/status")
+    public ResponseEntity<?> getParticipantStatus(
+            @PathVariable UUID conversationId,
+            @PathVariable String deviceId) {
+        try {
+            logger.info("Checking participant status - Conversation: {}, Device: {}", conversationId, deviceId);
+            boolean isActive = conversationService.isActiveParticipant(conversationId, deviceId);
+            return ResponseEntity.ok(new ParticipantStatusSimpleResponse(conversationId, deviceId, isActive));
+        } catch (Exception e) {
+            logger.error("Error checking participant status", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Error checking participant status: " + e.getMessage()));
+        }
+    }
+
     // Response DTOs
 
     public static class ConversationResponse {
@@ -226,6 +305,30 @@ public class ConversationController {
 
         public String getMessage() {
             return message;
+        }
+    }
+
+    public static class ParticipantStatusSimpleResponse {
+        private final UUID conversationId;
+        private final String deviceId;
+        private final boolean isActive;
+
+        public ParticipantStatusSimpleResponse(UUID conversationId, String deviceId, boolean isActive) {
+            this.conversationId = conversationId;
+            this.deviceId = deviceId;
+            this.isActive = isActive;
+        }
+
+        public UUID getConversationId() {
+            return conversationId;
+        }
+
+        public String getDeviceId() {
+            return deviceId;
+        }
+
+        public boolean isActive() {
+            return isActive;
         }
     }
 }

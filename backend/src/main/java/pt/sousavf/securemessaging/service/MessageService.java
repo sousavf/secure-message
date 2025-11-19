@@ -245,6 +245,29 @@ public class MessageService {
     }
 
     /**
+     * Get messages in a conversation created since a specific timestamp (for polling)
+     */
+    public List<MessageResponse> getConversationMessagesSince(UUID conversationId, LocalDateTime since) {
+        logger.info("Retrieving messages for conversation: {} since: {}", conversationId, since);
+
+        // Validate conversation exists and is active
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+
+        if (!conversation.isActive()) {
+            throw new IllegalStateException("Conversation is no longer active");
+        }
+
+        List<Message> messages = messageRepository.findActiveByConversationIdAndCreatedAfter(conversationId, since);
+        logger.info("Found {} new messages for conversation: {} since: {}",
+            messages.size(), conversationId, since);
+
+        return messages.stream()
+            .map(MessageResponse::fromMessage)
+            .collect(Collectors.toList());
+    }
+
+    /**
      * Retrieve and consume a message from a conversation
      */
     @Transactional

@@ -159,6 +159,7 @@ enum NetworkError: Error, LocalizedError {
     case messageTooLarge(String)
     case conversationExpired
     case conversationNotFound
+    case linkAlreadyConsumed(String)
     case unknownError
 
     var errorDescription: String? {
@@ -181,6 +182,8 @@ enum NetworkError: Error, LocalizedError {
             return "This conversation has expired"
         case .conversationNotFound:
             return "Conversation not found"
+        case .linkAlreadyConsumed(let message):
+            return message
         case .unknownError:
             return "An unknown error occurred"
         }

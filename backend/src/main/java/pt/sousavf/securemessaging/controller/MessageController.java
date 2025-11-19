@@ -113,14 +113,34 @@ public class MessageController {
     }
 
     /**
-     * Get all messages in a conversation
+     * Get all messages in a conversation, optionally filtered by creation time
      */
     @GetMapping("/api/conversations/{conversationId}/messages")
     public ResponseEntity<?> getConversationMessages(
-            @PathVariable UUID conversationId) {
+            @PathVariable UUID conversationId,
+            @RequestParam(required = false) String since) {
         try {
-            logger.info("Received request to retrieve messages from conversation: {}", conversationId);
-            List<MessageResponse> messages = messageService.getConversationMessages(conversationId);
+            logger.info("Received request to retrieve messages from conversation: {} since: {}", conversationId, since);
+
+            List<MessageResponse> messages;
+
+            // If 'since' parameter is provided, fetch only messages created after that time
+            if (since != null && !since.isEmpty()) {
+                try {
+                    LocalDateTime sinceTime = LocalDateTime.parse(since);
+                    messages = messageService.getConversationMessagesSince(conversationId, sinceTime);
+                    logger.info("Retrieved {} incremental messages since {}", messages.size(), since);
+                } catch (Exception e) {
+                    logger.warn("Invalid 'since' parameter format: {}", since);
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ErrorMessage("Invalid 'since' parameter. Use ISO-8601 format: 2025-11-19T18:30:00"));
+                }
+            } else {
+                // If no 'since' parameter, fetch all messages
+                messages = messageService.getConversationMessages(conversationId);
+                logger.info("Retrieved {} total messages", messages.size());
+            }
+
             return ResponseEntity.ok(messages);
         } catch (IllegalArgumentException e) {
             logger.warn("Invalid request: {}", e.getMessage());

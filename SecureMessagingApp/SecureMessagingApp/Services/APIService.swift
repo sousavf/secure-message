@@ -542,6 +542,73 @@ class APIService: ObservableObject {
         }
     }
 
+    func getConversationMessagesSince(conversationId: UUID, since: Date) async throws -> [ConversationMessage] {
+        // Format the date as ISO8601 string for the API
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let sinceString = formatter.string(from: since)
+
+        var urlRequest = try createRequest(for: "/api/conversations/\(conversationId.uuidString)/messages?since=\(sinceString)")
+        print("[DEBUG] getConversationMessagesSince - Request URL: \(urlRequest.url?.absoluteString ?? "unknown")")
+
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.unknownError
+        }
+
+        print("[DEBUG] getConversationMessagesSince - HTTP Status Code: \(httpResponse.statusCode)")
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("[DEBUG] getConversationMessagesSince - Response body: \(responseString)")
+        }
+
+        switch httpResponse.statusCode {
+        case 200:
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .custom { decoder in
+                let container = try decoder.singleValueContainer()
+                let dateString = try container.decode(String.self)
+
+                // Try multiple date formats that Spring Boot might use
+                let formatters = [
+                    "yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
+                    "yyyy-MM-dd'T'HH:mm:ss.SSS",
+                    "yyyy-MM-dd'T'HH:mm:ss",
+                    "yyyy-MM-dd HH:mm:ss",
+                    "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                ]
+
+                for format in formatters {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = format
+                    formatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    if let date = formatter.date(from: dateString) {
+                        return date
+                    }
+                }
+
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(dateString)")
+            }
+            do {
+                let messages = try decoder.decode([ConversationMessage].self, from: data)
+                print("[DEBUG] getConversationMessagesSince - Successfully decoded \(messages.count) new messages")
+                return messages
+            } catch {
+                print("[ERROR] getConversationMessagesSince - Failed to decode response: \(error)")
+                throw error
+            }
+        case 404:
+            throw NetworkError.conversationNotFound
+        case 400...499:
+            throw NetworkError.serverError(httpResponse.statusCode)
+        case 500...599:
+            throw NetworkError.serverError(httpResponse.statusCode)
+        default:
+            throw NetworkError.unknownError
+        }
+    }
+
     func addConversationMessage(conversationId: UUID, encryptedMessage: EncryptedMessage, deviceId: String? = nil) async throws -> ConversationMessage {
         print("[DEBUG] addConversationMessage - Creating request with encrypted message")
         let request = CreateMessageRequest(
@@ -696,6 +763,45 @@ class APIService: ObservableObject {
             print("Error fetching subscription limits: \(error)")
         }
         return nil
+    }
+
+    func joinConversation(conversationId: UUID, deviceId: String) async throws {
+        var urlRequest = try createRequest(for: "/api/conversations/\(conversationId.uuidString)/join", method: "POST")
+        addDeviceIdHeader(to: &urlRequest, deviceId: deviceId)
+
+        print("[DEBUG] joinConversation - Request URL: \(urlRequest.url?.absoluteString ?? "unknown")")
+
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.unknownError
+        }
+
+        print("[DEBUG] joinConversation - HTTP Status Code: \(httpResponse.statusCode)")
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("[DEBUG] joinConversation - Response body: \(responseString)")
+        }
+
+        switch httpResponse.statusCode {
+        case 200:
+            print("[DEBUG] joinConversation - Successfully joined conversation: \(conversationId)")
+        case 404:
+            throw NetworkError.conversationNotFound
+        case 409:
+            // Conflict: Link already consumed or conversation not active
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("[ERROR] joinConversation - Conflict: \(responseString)")
+                throw NetworkError.linkAlreadyConsumed(responseString)
+            } else {
+                throw NetworkError.linkAlreadyConsumed("This conversation link has already been used")
+            }
+        case 400...499:
+            throw NetworkError.serverError(httpResponse.statusCode)
+        case 500...599:
+            throw NetworkError.serverError(httpResponse.statusCode)
+        default:
+            throw NetworkError.unknownError
+        }
     }
 }
 
