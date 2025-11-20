@@ -37,9 +37,11 @@
 			</array>
 		</dict>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
-	<key>NSCameraUsageDescription</key>
-	<string>Camera access is needed to scan QR codes for joining conversations</string>
 </dict>
 </plist>
