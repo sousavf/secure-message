@@ -14,9 +14,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Set push notification delegate
         UNUserNotificationCenter.current().delegate = self
 
-        // Request push notification permissions
+        // Request push notification permissions and refresh token if needed
         Task {
             await PushNotificationService.shared.requestAuthorization()
+            // Check if token needs refresh (24 hour expiry)
+            await PushNotificationService.shared.refreshTokenIfNeeded()
         }
 
         return true

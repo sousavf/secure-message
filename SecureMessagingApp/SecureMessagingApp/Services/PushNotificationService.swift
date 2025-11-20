@@ -7,6 +7,9 @@ class PushNotificationService {
     static let shared = PushNotificationService()
 
     private let apiService = APIService.shared
+    private let tokenRefreshInterval: TimeInterval = 24 * 60 * 60  // 24 hours
+    private let lastTokenRegistrationKey = "lastAPNsTokenRegistration"
+    private let lastRegisteredTokenKey = "lastRegisteredAPNsToken"
 
     // Notification name for when new messages arrive
     static let newMessageReceivedNotification = NSNotification.Name("newMessageReceived")
@@ -29,9 +32,35 @@ class PushNotificationService {
 
     // MARK: - Public Methods
 
+    /// Check if APNs token registration needs refresh (called on app launch)
+    func refreshTokenIfNeeded() async {
+        let defaults = UserDefaults.standard
+        let lastRegistration = defaults.double(forKey: lastTokenRegistrationKey)
+        let timeSinceLastRegistration = Date().timeIntervalSince1970 - lastRegistration
+
+        // Re-register if more than 24 hours have passed
+        if timeSinceLastRegistration > tokenRefreshInterval {
+            print("[DEBUG] PushNotificationService - Token registration expired, requesting new token")
+            // Request APNs to generate a new token (or refresh the existing one)
+            await MainActor.run {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+        } else {
+            print("[DEBUG] PushNotificationService - Token is fresh, no refresh needed")
+        }
+    }
+
     /// Register APNs token with backend
     func registerToken(_ apnsToken: String) async {
         let deviceId = persistentDeviceID
+        let defaults = UserDefaults.standard
+
+        // Check if token has changed
+        let lastToken = defaults.string(forKey: lastRegisteredTokenKey)
+        if lastToken == apnsToken {
+            print("[DEBUG] PushNotificationService - Token unchanged, skipping registration")
+            return
+        }
 
         print("[DEBUG] PushNotificationService - Registering APNs token for device: \(deviceId)")
 
@@ -57,6 +86,9 @@ class PushNotificationService {
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 || httpResponse.statusCode == 200 {
                     print("[DEBUG] PushNotificationService - APNs token registered successfully")
+                    // Save registration timestamp and token for future checks
+                    defaults.set(Date().timeIntervalSince1970, forKey: lastTokenRegistrationKey)
+                    defaults.set(apnsToken, forKey: lastRegisteredTokenKey)
                 } else {
                     let msg = "Failed to register token, status: \(httpResponse.statusCode)"
                     print("[ERROR] PushNotificationService - \(msg)")
