@@ -7,10 +7,12 @@ struct CreateConversationView: View {
 
     @StateObject private var apiService = APIService.shared
     @State private var selectedTTLHours: Int = 24
+    @State private var customDays: String = "2"
     @State private var isCreating = false
     @State private var errorMessage: String?
 
-    let ttlOptions = [1, 6, 12, 24, 48, 72]
+    let ttlOptions = [1, 6, 12, 24]  // 1h, 6h, 12h, 1 day
+    let unlimitedValue = 0  // 0 represents unlimited
 
     var body: some View {
         NavigationStack {
@@ -44,22 +46,58 @@ struct CreateConversationView: View {
                                 .font(.caption)
                                 .foregroundColor(.gray)
 
-                            Picker("Duration", selection: $selectedTTLHours) {
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                                 ForEach(ttlOptions, id: \.self) { hours in
-                                    HStack {
-                                        Text(formatDuration(hours))
-                                            .font(.body)
-                                        Spacer()
-                                        if selectedTTLHours == hours {
-                                            Image(systemName: "checkmark")
-                                                .foregroundColor(.indigo)
+                                    Button(action: { selectedTTLHours = hours }) {
+                                        HStack {
+                                            Spacer()
+                                            Text(formatDuration(hours))
+                                                .fontWeight(.medium)
+                                            Spacer()
                                         }
+                                        .padding(12)
+                                        .background(selectedTTLHours == hours ? Color.indigo : Color(.systemGray5))
+                                        .foregroundColor(selectedTTLHours == hours ? .white : .primary)
+                                        .cornerRadius(8)
                                     }
-                                    .tag(hours)
+                                }
+
+                                // Custom days input field
+                                HStack(spacing: 0) {
+                                    TextField("2", text: $customDays)
+                                        .keyboardType(.numberPad)
+                                        .multilineTextAlignment(.center)
+                                        .fontWeight(.medium)
+                                        .onChange(of: customDays) { newValue in
+                                            let filtered = newValue.filter { $0.isNumber }
+                                            customDays = filtered
+                                            if let days = Int(filtered), days > 0 {
+                                                selectedTTLHours = days * 24
+                                            }
+                                        }
+
+                                    Text(" days")
+                                        .fontWeight(.medium)
+                                }
+                                .padding(12)
+                                .background(Int(customDays) == (selectedTTLHours / 24) && selectedTTLHours > 0 && selectedTTLHours != unlimitedValue ? Color.indigo : Color(.systemGray5))
+                                .foregroundColor(Int(customDays) == (selectedTTLHours / 24) && selectedTTLHours > 0 && selectedTTLHours != unlimitedValue ? .white : .primary)
+                                .cornerRadius(8)
+
+                                // Unlimited button
+                                Button(action: { selectedTTLHours = unlimitedValue }) {
+                                    HStack {
+                                        Spacer()
+                                        Text("Unlimited")
+                                            .fontWeight(.medium)
+                                        Spacer()
+                                    }
+                                    .padding(12)
+                                    .background(selectedTTLHours == unlimitedValue ? Color.indigo : Color(.systemGray5))
+                                    .foregroundColor(selectedTTLHours == unlimitedValue ? .white : .primary)
+                                    .cornerRadius(8)
                                 }
                             }
-                            .pickerStyle(.segmented)
-                            .tint(.indigo)
                         }
 
                         VStack(alignment: .leading, spacing: 12) {
@@ -189,7 +227,9 @@ struct CreateConversationView: View {
     }
 
     private func formatDuration(_ hours: Int) -> String {
-        if hours < 24 {
+        if hours == 0 {
+            return "Unlimited"
+        } else if hours < 24 {
             return "\(hours)h"
         } else if hours == 24 {
             return "1 day"
