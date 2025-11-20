@@ -818,12 +818,9 @@ class APIService: ObservableObject {
             throw NetworkError.conversationNotFound
         case 409:
             // Conflict: Link already consumed or conversation not active
-            if let responseString = String(data: data, encoding: .utf8) {
-                print("[ERROR] joinConversation - Conflict: \(responseString)")
-                throw NetworkError.linkAlreadyConsumed(responseString)
-            } else {
-                throw NetworkError.linkAlreadyConsumed("This conversation link has already been used")
-            }
+            let errorMessage = extractErrorMessage(from: data) ?? "This conversation link has already been used"
+            print("[ERROR] joinConversation - Conflict: \(errorMessage)")
+            throw NetworkError.linkAlreadyConsumed(errorMessage)
         case 400...499:
             throw NetworkError.serverError(httpResponse.statusCode)
         case 500...599:
@@ -831,6 +828,23 @@ class APIService: ObservableObject {
         default:
             throw NetworkError.unknownError
         }
+    }
+
+    private func extractErrorMessage(from data: Data) -> String? {
+        // Try to parse JSON response and extract error message
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            // Try common error field names
+            if let message = json["message"] as? String {
+                return message
+            }
+            if let error = json["error"] as? String {
+                return error
+            }
+            if let detail = json["detail"] as? String {
+                return detail
+            }
+        }
+        return nil
     }
 }
 

@@ -85,8 +85,12 @@ struct ConversationDetailView: View {
                             .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty || isSending || conversation.isExpired)
                         }
 
-                        // Only show share button for conversation creator
-                        if conversation.isCreatedByCurrentDevice {
+                        // Only show share button for conversation creator if no one has joined yet
+                        let hasOtherDeviceParticipant = messages.contains { message in
+                            message.senderDeviceId != deviceId
+                        }
+
+                        if conversation.isCreatedByCurrentDevice && !hasOtherDeviceParticipant {
                             HStack {
                                 Button(action: generateShareLink) {
                                     HStack {
