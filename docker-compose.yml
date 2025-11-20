@@ -5,9 +5,9 @@ services:
     image: postgres:15-alpine
     container_name: secure-messaging-db
     environment:
-      POSTGRES_DB: secure_messaging
-      POSTGRES_USER: secure_user
-      POSTGRES_PASSWORD: secure_password
+      POSTGRES_DB: privileged_messaging
+      POSTGRES_USER: privileged_user
+      POSTGRES_PASSWORD: privileged_password
     ports:
       - "5432:5432"
     volumes:
@@ -16,6 +16,26 @@ services:
       - secure-messaging-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U secure_user -d secure_messaging"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: secure-messaging-redis
+    command: redis-server --appendonly yes --maxmemory ${REDIS_MAX_MEMORY:-512mb} --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_prod_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - secure-messaging-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -71,4 +91,6 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
+  redis_prod_data:
     driver: local

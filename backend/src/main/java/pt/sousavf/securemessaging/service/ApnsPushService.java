@@ -353,10 +353,13 @@ public class ApnsPushService {
     /**
      * Hash conversation ID for privacy (matching iOS implementation)
      * Returns first 32 characters of SHA256 hash
+     * IMPORTANT: Convert UUID to lowercase before hashing to match iOS/Java UUID.toString() format
      */
     private String hashConversationId(UUID conversationId) {
+        // Convert to lowercase to match Java's UUID.toString() format (lowercase hex)
+        String lowercaseUUID = conversationId.toString().toLowerCase();
         return Hashing.sha256()
-                .hashString(conversationId.toString(), StandardCharsets.UTF_8)
+                .hashString(lowercaseUUID, StandardCharsets.UTF_8)
                 .toString()
                 .substring(0, 32);
     }
