@@ -39,6 +39,9 @@ struct ConversationDetailView: View {
                         }
                         .frame(maxHeight: .infinity)
                         .padding()
+                        .onTapGesture {
+                            messageFieldFocused = false
+                        }
                     } else {
                         ScrollViewReader { scrollProxy in
                             List {
@@ -55,6 +58,9 @@ struct ConversationDetailView: View {
                                         scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
                                     }
                                 }
+                            }
+                            .onTapGesture {
+                                messageFieldFocused = false
                             }
                         }
                     }
@@ -257,7 +263,8 @@ struct ConversationDetailView: View {
             messages.append(newMessage)
 
             messageText = ""
-            messageFieldFocused = false
+            // Keep keyboard focused instead of dismissing it
+            messageFieldFocused = true
             errorMessage = nil
             onUpdate()
         } catch let error as NetworkError {
