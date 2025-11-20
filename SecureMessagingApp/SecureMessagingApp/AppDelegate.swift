@@ -29,10 +29,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     ) {
         let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
         print("[DEBUG] AppDelegate - Registered for remote notifications, token: \(token.prefix(16))...")
+        print("[DEBUG] AppDelegate - Token length: \(token.count)")
 
         // Register the token with our backend
+        print("[DEBUG] AppDelegate - About to register token with backend")
         Task {
+            print("[DEBUG] AppDelegate - Inside Task, calling registerToken")
             await PushNotificationService.shared.registerToken(token)
+            print("[DEBUG] AppDelegate - registerToken completed")
         }
     }
 

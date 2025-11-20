@@ -46,7 +46,7 @@ management:
 
 logging:
   level:
-    pt.sousavf.securemessaging: INFO
+    pt.sousavf.securemessaging: DEBUG
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
   pattern:
@@ -59,7 +59,7 @@ apns:
     id: VX2N9484ZL
   team:
     id: RJ3GB6YDXL
-  topic: pt.sousavf.SafeWhisper
+  topic: pt.sousavf.Safe-Whisper
 
 app:
   message:

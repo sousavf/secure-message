@@ -22,9 +22,9 @@ struct ConversationDetailView: View {
     @State private var pollTimer: Timer?
     @State private var lastMessageTimestamp: Date?
     @State private var pushNotificationsEnabled = false
-    private let defaultPollInterval: TimeInterval = 5.0 // Poll every 5 seconds when push not working
-    private let adaptivePollInterval: TimeInterval = 30.0 // Poll every 30 seconds when push is working
-    @State private var currentPollInterval: TimeInterval = 5.0
+    private let defaultPollInterval: TimeInterval = 1000.0 // Poll every 5 seconds when push not working
+    private let adaptivePollInterval: TimeInterval = 1000.0 // Poll every 30 seconds when push is working
+    @State private var currentPollInterval: TimeInterval = 10000.0
 
     var body: some View {
         NavigationStack {

@@ -73,7 +73,7 @@ public class ApnsPushService {
             );
 
             apnsClient = new ApnsClientBuilder()
-                    .setApnsServer(ApnsClientBuilder.PRODUCTION_APNS_HOST)
+                    .setApnsServer("api.sandbox.push.apple.com")
                     .setSigningKey(signingKey)
                     .build();
 
@@ -131,8 +131,8 @@ public class ApnsPushService {
 
         try {
             String hashedConvId = hashConversationId(conversationId);
-            logger.debug("Sending alert push to token: {}... for conversation hash: {}",
-                    deviceToken.substring(0, Math.min(8, deviceToken.length())), hashedConvId);
+            logger.info("Sending alert push to token: {}... for conversation: {} (hash: {})",
+                    deviceToken.substring(0, Math.min(8, deviceToken.length())), conversationId, hashedConvId);
 
             // Build alert notification payload using JSON
             String payload = String.format(
@@ -178,12 +178,19 @@ public class ApnsPushService {
                 recipientDevices.size(), conversationId);
 
         // Get device tokens for recipients
-        List<DeviceToken> tokens = deviceTokenRepository.findByDeviceIdIn(recipientDevices).stream()
+        List<DeviceToken> allTokens = deviceTokenRepository.findByDeviceIdIn(recipientDevices);
+        logger.info("Found {} total tokens for {} recipient devices", allTokens.size(), recipientDevices.size());
+
+        List<DeviceToken> tokens = allTokens.stream()
                 .filter(DeviceToken::isActive)
                 .toList();
 
+        logger.info("Found {} active tokens after filtering", tokens.size());
+
         for (DeviceToken token : tokens) {
-            sendSilentPush(token.getApnsToken(), conversationId);
+            logger.info("Calling sendAlertPush for token: {}... conversation: {}",
+                    token.getApnsToken().substring(0, Math.min(8, token.getApnsToken().length())), conversationId);
+            sendAlertPush(token.getApnsToken(), conversationId, "New Message", "You have a new message");
         }
     }
 

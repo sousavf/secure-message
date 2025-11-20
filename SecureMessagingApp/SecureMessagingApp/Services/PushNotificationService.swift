@@ -11,16 +11,30 @@ class PushNotificationService {
     // Notification name for when new messages arrive
     static let newMessageReceivedNotification = NSNotification.Name("newMessageReceived")
 
+    // Get the persistent device ID (same one used throughout the app)
+    var persistentDeviceID: String {
+        let defaults = UserDefaults.standard
+        let deviceIdKey = "deviceId"  // Same key as MainView uses!
+
+        // Try to get existing ID
+        if let existingID = defaults.string(forKey: deviceIdKey) {
+            return existingID
+        }
+
+        // Create new ID if doesn't exist (MainView should have already created this)
+        let newID = UUID().uuidString
+        defaults.set(newID, forKey: deviceIdKey)
+        return newID
+    }
+
     // MARK: - Public Methods
 
     /// Register APNs token with backend
     func registerToken(_ apnsToken: String) async {
-        guard let deviceId = UIDevice.current.identifierForVendor?.uuidString else {
-            print("[ERROR] PushNotificationService - Failed to get device ID")
-            return
-        }
+        let deviceId = persistentDeviceID
 
         print("[DEBUG] PushNotificationService - Registering APNs token for device: \(deviceId)")
+        showAlert("Debug", "Registering token for device: \(deviceId.prefix(8))...")
 
         do {
             let request = RegisterDeviceTokenRequest(apnsToken: apnsToken)
@@ -44,12 +58,30 @@ class PushNotificationService {
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 || httpResponse.statusCode == 200 {
                     print("[DEBUG] PushNotificationService - APNs token registered successfully")
+                    showAlert("Success", "APNs token registered!")
                 } else {
-                    print("[ERROR] PushNotificationService - Failed to register token, status: \(httpResponse.statusCode)")
+                    let msg = "Failed to register token, status: \(httpResponse.statusCode)"
+                    print("[ERROR] PushNotificationService - \(msg)")
+                    showAlert("Error", msg)
                 }
             }
         } catch {
-            print("[ERROR] PushNotificationService - Failed to register APNs token: \(error)")
+            let msg = "Failed to register APNs token: \(error)"
+            print("[ERROR] PushNotificationService - \(msg)")
+            showAlert("Error", msg)
+        }
+    }
+
+    private func showAlert(_ title: String, _ message: String) {
+        DispatchQueue.main.async {
+            let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = scene.windows.first,
+               let rootViewController = window.rootViewController {
+                rootViewController.present(alert, animated: true)
+            }
         }
     }
 

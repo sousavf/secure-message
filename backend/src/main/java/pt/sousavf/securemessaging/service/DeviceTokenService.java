@@ -26,24 +26,41 @@ public class DeviceTokenService {
     public DeviceToken registerToken(String deviceId, String apnsToken) {
         logger.info("Registering APNs token for device: {}", deviceId);
 
-        // Check if device already has this token
+        // Check if this token already exists
         Optional<DeviceToken> existingToken = deviceTokenRepository.findByApnsToken(apnsToken);
         if (existingToken.isPresent()) {
-            // Token already registered for this device
+            // Token already registered
             if (existingToken.get().getDeviceId().equals(deviceId)) {
+                // Same device, same token - just update status
                 logger.debug("Token already registered for device {}, updating timestamp", deviceId);
                 DeviceToken token = existingToken.get();
                 token.setActive(true);
                 return deviceTokenRepository.save(token);
             } else {
-                // Token was previously registered to a different device (device switch)
-                logger.info("Token moving from device {} to device {}", existingToken.get().getDeviceId(), deviceId);
-                existingToken.get().setActive(false);
-                deviceTokenRepository.save(existingToken.get());
+                // Token moved to different device - UPDATE existing record instead of creating new
+                logger.info("Token moving from device {} to device {}",
+                    existingToken.get().getDeviceId(), deviceId);
+
+                // Deactivate any OTHER previous tokens for this NEW device
+                // (but not the one we're about to update)
+                List<DeviceToken> otherPreviousTokens = deviceTokenRepository.findAllByDeviceId(deviceId);
+                for (DeviceToken token : otherPreviousTokens) {
+                    token.setActive(false);
+                    deviceTokenRepository.save(token);
+                }
+
+                // Update the existing token to point to the new device
+                DeviceToken token = existingToken.get();
+                token.setDeviceId(deviceId);
+                token.setActive(true);
+                DeviceToken savedToken = deviceTokenRepository.save(token);
+                logger.info("APNs token transferred to device: {}", deviceId);
+                return savedToken;
             }
         }
 
-        // Deactivate any previous tokens for this device
+        // Token doesn't exist yet - create new one
+        // But first, deactivate any previous tokens for this device
         List<DeviceToken> previousTokens = deviceTokenRepository.findAllByDeviceId(deviceId);
         for (DeviceToken token : previousTokens) {
             token.setActive(false);
