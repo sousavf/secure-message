@@ -21,7 +21,10 @@ struct ConversationDetailView: View {
     // Polling state
     @State private var pollTimer: Timer?
     @State private var lastMessageTimestamp: Date?
-    private let pollInterval: TimeInterval = 5.0 // Poll every 5 seconds
+    @State private var pushNotificationsEnabled = false
+    private let defaultPollInterval: TimeInterval = 5.0 // Poll every 5 seconds when push not working
+    private let adaptivePollInterval: TimeInterval = 30.0 // Poll every 30 seconds when push is working
+    @State private var currentPollInterval: TimeInterval = 5.0
 
     var body: some View {
         NavigationStack {
@@ -156,11 +159,14 @@ struct ConversationDetailView: View {
             .onAppear {
                 Task {
                     await loadMessages()
+                    pushNotificationsEnabled = await PushNotificationService.shared.isNotificationEnabled()
                 }
                 startPolling()
+                setupPushNotificationListener()
             }
             .onDisappear {
                 stopPolling()
+                removePushNotificationListener()
             }
             .refreshable {
                 await loadMessages()
@@ -214,8 +220,12 @@ struct ConversationDetailView: View {
         // Stop any existing timer first
         stopPolling()
 
+        // Set initial poll interval based on push notification status
+        currentPollInterval = pushNotificationsEnabled ? adaptivePollInterval : defaultPollInterval
+        print("[DEBUG] ConversationDetailView - Starting with poll interval: \(currentPollInterval)s (push enabled: \(pushNotificationsEnabled))")
+
         // Start polling timer (lastMessageTimestamp already set by loadMessages)
-        pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { _ in
+        pollTimer = Timer.scheduledTimer(withTimeInterval: currentPollInterval, repeats: true) { _ in
             Task {
                 await pollForNewMessages()
             }
@@ -421,6 +431,39 @@ struct ConversationDetailView: View {
         // Close the editor
         showNameEditor = false
         editingName = ""
+    }
+
+    // MARK: - Push Notification Integration
+
+    private func setupPushNotificationListener() {
+        print("[DEBUG] ConversationDetailView - Setting up push notification listener")
+
+        NotificationCenter.default.addObserver(
+            forName: PushNotificationService.newMessageReceivedNotification,
+            object: nil,
+            queue: .main
+        ) { notification in
+            // Check if this push is for our conversation
+            if let userInfo = notification.userInfo,
+               let conversationHash = userInfo["conversationHash"] as? String {
+                // Note: We can't easily access self properties from a struct in a notification observer
+                // So we'll just log the push and rely on regular polling to fetch messages
+                print("[DEBUG] ConversationDetailView - Push notification received, will fetch on next poll")
+            }
+        }
+    }
+
+    private func removePushNotificationListener() {
+        print("[DEBUG] ConversationDetailView - Removing push notification listener")
+        NotificationCenter.default.removeObserver(self, name: PushNotificationService.newMessageReceivedNotification, object: nil)
+    }
+
+    /// Hash conversation ID to match backend implementation
+    private func hashConversationId(_ id: UUID) -> String {
+        let data = id.uuidString.data(using: .utf8)!
+        let hash = SHA256.hash(data: data)
+        let hashString = hash.compactMap { String(format: "%02x", $0) }.joined()
+        return String(hashString.prefix(32))
     }
 }
 

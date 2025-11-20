@@ -52,6 +52,15 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
+apns:
+  enabled: true
+  key:
+    path: /Users/sousavf/Downloads/AuthKey.p8
+    id: VX2N9484ZL
+  team:
+    id: RJ3GB6YDXL
+  topic: pt.sousavf.SafeWhisper
+
 app:
   message:
     default-ttl-hours: 24

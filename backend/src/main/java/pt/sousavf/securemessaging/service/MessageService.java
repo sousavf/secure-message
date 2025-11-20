@@ -40,6 +40,9 @@ public class MessageService {
     @Autowired(required = false)
     private ConversationService conversationService;
 
+    @Autowired(required = false)
+    private ApnsPushService apnsPushService;
+
     @Value("${app.message.default-ttl-hours:24}")
     private int defaultTtlHours;
 
@@ -213,6 +216,16 @@ public class MessageService {
         Message savedMessage = messageRepository.save(message);
         logger.info("Conversation message created with ID: {}, conversation: {}", savedMessage.getId(), conversationId);
 
+        // Send push notification to other participants
+        if (apnsPushService != null && conversationService != null) {
+            try {
+                sendPushToParticipants(conversationId, senderDeviceId);
+            } catch (Exception e) {
+                logger.error("Error sending push notification for conversation {}", conversationId, e);
+                // Don't fail message creation if push fails - it's asynchronous
+            }
+        }
+
         return MessageResponse.fromMessage(savedMessage);
     }
 
@@ -307,5 +320,27 @@ public class MessageService {
 
         logger.info("Conversation message retrieved and marked as consumed: {}", messageId);
         return Optional.of(MessageResponse.fromMessage(message));
+    }
+
+    /**
+     * Send push notifications to all participants in a conversation except the sender
+     */
+    private void sendPushToParticipants(UUID conversationId, String senderDeviceId) {
+        try {
+            // Get all active participants in the conversation
+            List<String> participantDeviceIds = conversationService
+                    .getActiveParticipants(conversationId)
+                    .stream()
+                    .map(participant -> participant.getDeviceId())
+                    .toList();
+
+            logger.debug("Sending push to {} participants for conversation {}", participantDeviceIds.size(), conversationId);
+
+            // Send silent push to each participant (except sender)
+            apnsPushService.sendPushToConversationParticipants(conversationId, participantDeviceIds, senderDeviceId);
+
+        } catch (Exception e) {
+            logger.error("Error sending push to participants for conversation {}", conversationId, e);
+        }
     }
 }

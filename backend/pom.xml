@@ -84,6 +84,20 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+
+        <!-- APNs Push Notifications -->
+        <dependency>
+            <groupId>com.eatthepath</groupId>
+            <artifactId>pushy</artifactId>
+            <version>0.15.2</version>
+        </dependency>
+
+        <!-- Guava for hashing -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.0.0-jre</version>
+        </dependency>
     </dependencies>
 
     <build>

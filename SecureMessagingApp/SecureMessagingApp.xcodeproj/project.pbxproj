@@ -29,6 +29,8 @@
 		E13C95BE2ECCCA8E00D77F31 /* KeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95BD2ECCCA8E00D77F31 /* KeyStore.swift */; };
 		E13C95D22ECCD64A00D77F31 /* ConversationLinkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95D12ECCD64A00D77F31 /* ConversationLinkStore.swift */; };
 		E13C95D42ECE66DB00D77F31 /* ConversationNameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95D32ECE66DB00D77F31 /* ConversationNameStore.swift */; };
+		E13C95D62ECE714C00D77F31 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95D52ECE714C00D77F31 /* AppDelegate.swift */; };
+		E13C95D82ECE715800D77F31 /* PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95D72ECE715800D77F31 /* PushNotificationService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,6 +58,8 @@
 		E13C95BD2ECCCA8E00D77F31 /* KeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyStore.swift; sourceTree = "<group>"; };
 		E13C95D12ECCD64A00D77F31 /* ConversationLinkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationLinkStore.swift; sourceTree = "<group>"; };
 		E13C95D32ECE66DB00D77F31 /* ConversationNameStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationNameStore.swift; sourceTree = "<group>"; };
+		E13C95D52ECE714C00D77F31 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		E13C95D72ECE715800D77F31 /* PushNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -98,6 +102,7 @@
 			isa = PBXGroup;
 			children = (
 				1A1A1A371A1A1A1A1A1A1A37 /* Info.plist */,
+				E13C95D52ECE714C00D77F31 /* AppDelegate.swift */,
 				1A1A1A191A1A1A1A1A1A1A19 /* SecureMessagingAppApp.swift */,
 				1A1A1A1B1A1A1A1A1A1A1A1B /* ContentView.swift */,
 				1A1A1A351A1A1A1A1A1A1A35 /* Models.swift */,
@@ -123,6 +128,7 @@
 				E13C95D32ECE66DB00D77F31 /* ConversationNameStore.swift */,
 				E13C95BD2ECCCA8E00D77F31 /* KeyStore.swift */,
 				1A1A1A271A1A1A1A1A1A1A27 /* CryptoManager.swift */,
+				E13C95D72ECE715800D77F31 /* PushNotificationService.swift */,
 				1A1A1A291A1A1A1A1A1A1A29 /* APIService.swift */,
 				E13C95D12ECCD64A00D77F31 /* ConversationLinkStore.swift */,
 				1A1A1A2B1A1A1A1A1A1A1A2B /* LinkManager.swift */,
@@ -218,6 +224,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E13C95D82ECE715800D77F31 /* PushNotificationService.swift in Sources */,
+				E13C95D62ECE714C00D77F31 /* AppDelegate.swift in Sources */,
 				E13C95D42ECE66DB00D77F31 /* ConversationNameStore.swift in Sources */,
 				E13C95D22ECCD64A00D77F31 /* ConversationLinkStore.swift in Sources */,
 				E13C95BE2ECCCA8E00D77F31 /* KeyStore.swift in Sources */,
