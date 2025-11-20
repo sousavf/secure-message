@@ -89,6 +89,7 @@ struct CreateConversationView: View {
                                     HStack {
                                         Spacer()
                                         Text("Unlimited")
+                                            .font(.subheadline)
                                             .fontWeight(.medium)
                                         Spacer()
                                     }

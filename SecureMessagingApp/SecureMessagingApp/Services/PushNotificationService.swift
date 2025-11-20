@@ -34,7 +34,6 @@ class PushNotificationService {
         let deviceId = persistentDeviceID
 
         print("[DEBUG] PushNotificationService - Registering APNs token for device: \(deviceId)")
-        showAlert("Debug", "Registering token for device: \(deviceId.prefix(8))...")
 
         do {
             let request = RegisterDeviceTokenRequest(apnsToken: apnsToken)
@@ -58,17 +57,14 @@ class PushNotificationService {
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 201 || httpResponse.statusCode == 200 {
                     print("[DEBUG] PushNotificationService - APNs token registered successfully")
-                    showAlert("Success", "APNs token registered!")
                 } else {
                     let msg = "Failed to register token, status: \(httpResponse.statusCode)"
                     print("[ERROR] PushNotificationService - \(msg)")
-                    showAlert("Error", msg)
                 }
             }
         } catch {
             let msg = "Failed to register APNs token: \(error)"
             print("[ERROR] PushNotificationService - \(msg)")
-            showAlert("Error", msg)
         }
     }
 
