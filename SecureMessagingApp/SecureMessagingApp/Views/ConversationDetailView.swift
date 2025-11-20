@@ -18,13 +18,8 @@ struct ConversationDetailView: View {
     @State private var editingName: String = ""
     @FocusState private var messageFieldFocused: Bool
 
-    // Polling state
-    @State private var pollTimer: Timer?
-    @State private var lastMessageTimestamp: Date?
+    // Push notification state
     @State private var pushNotificationsEnabled = false
-    private let defaultPollInterval: TimeInterval = 1000.0 // Poll every 5 seconds when push not working
-    private let adaptivePollInterval: TimeInterval = 1000.0 // Poll every 30 seconds when push is working
-    @State private var currentPollInterval: TimeInterval = 10000.0
 
     var body: some View {
         NavigationStack {
@@ -161,11 +156,9 @@ struct ConversationDetailView: View {
                     await loadMessages()
                     pushNotificationsEnabled = await PushNotificationService.shared.isNotificationEnabled()
                 }
-                startPolling()
                 setupPushNotificationListener()
             }
             .onDisappear {
-                stopPolling()
                 removePushNotificationListener()
             }
             .refreshable {
@@ -194,16 +187,6 @@ struct ConversationDetailView: View {
             messages = try await apiService.getConversationMessages(conversationId: conversation.id)
             print("[DEBUG] ConversationDetailView - Loaded \(messages.count) messages")
 
-            // Track the timestamp of the most recent message for incremental polling
-            if let lastMessage = messages.last {
-                lastMessageTimestamp = lastMessage.createdAt
-                print("[DEBUG] ConversationDetailView - Last message timestamp: \(String(describing: lastMessage.createdAt))")
-            } else {
-                // No messages yet, use current time
-                lastMessageTimestamp = Date()
-                print("[DEBUG] ConversationDetailView - No messages, using current time as baseline")
-            }
-
             errorMessage = nil
         } catch let error as NetworkError {
             print("[ERROR] ConversationDetailView - NetworkError: \(error)")
@@ -214,97 +197,6 @@ struct ConversationDetailView: View {
         }
     }
 
-    private func startPolling() {
-        print("[DEBUG] ConversationDetailView - Starting polling for conversation: \(conversation.id)")
-
-        // Stop any existing timer first
-        stopPolling()
-
-        // Set initial poll interval based on push notification status
-        currentPollInterval = pushNotificationsEnabled ? adaptivePollInterval : defaultPollInterval
-        print("[DEBUG] ConversationDetailView - Starting with poll interval: \(currentPollInterval)s (push enabled: \(pushNotificationsEnabled))")
-
-        // Start polling timer (lastMessageTimestamp already set by loadMessages)
-        pollTimer = Timer.scheduledTimer(withTimeInterval: currentPollInterval, repeats: true) { _ in
-            Task {
-                await pollForNewMessages()
-            }
-        }
-    }
-
-    private func stopPolling() {
-        if pollTimer != nil {
-            print("[DEBUG] ConversationDetailView - Stopping polling for conversation: \(conversation.id)")
-            pollTimer?.invalidate()
-            pollTimer = nil
-        }
-    }
-
-    @MainActor
-    private func pollForNewMessages() async {
-        guard let lastTimestamp = lastMessageTimestamp else {
-            print("[DEBUG] ConversationDetailView - No lastMessageTimestamp, skipping poll")
-            return
-        }
-
-        do {
-            print("[DEBUG] ConversationDetailView - Polling for new messages since: \(lastTimestamp)")
-
-            // Fetch only messages created after the last message we have
-            let newMessages = try await apiService.getConversationMessagesSince(
-                conversationId: conversation.id,
-                since: lastTimestamp
-            )
-
-            if !newMessages.isEmpty {
-                print("[DEBUG] ConversationDetailView - Received \(newMessages.count) new messages")
-
-                // Filter out messages that already exist (by ID) to prevent duplicates
-                let existingIds = Set(messages.map { $0.id })
-                let uniqueNewMessages = newMessages.filter { !existingIds.contains($0.id) }
-
-                if !uniqueNewMessages.isEmpty {
-                    print("[DEBUG] ConversationDetailView - Adding \(uniqueNewMessages.count) unique new messages (filtered \(newMessages.count - uniqueNewMessages.count) duplicates)")
-                    // Add only unique new messages to the list
-                    messages.append(contentsOf: uniqueNewMessages)
-                } else {
-                    print("[DEBUG] ConversationDetailView - All \(newMessages.count) messages were duplicates, skipping")
-                }
-
-                // Update timestamp to the most recent message (whether unique or not)
-                if let lastMessage = newMessages.last {
-                    lastMessageTimestamp = lastMessage.createdAt
-                    print("[DEBUG] ConversationDetailView - Updated last message timestamp: \(String(describing: lastMessage.createdAt))")
-                }
-            } else {
-                print("[DEBUG] ConversationDetailView - No new messages in this poll")
-            }
-
-            // Check if conversation still exists (detect when initiator deletes)
-            // This is critical to detect deletions and auto-cleanup locally
-            print("[DEBUG] ConversationDetailView - Checking if conversation is still active")
-            let conversationStatus = try await apiService.getConversation(id: conversation.id)
-            print("[DEBUG] ConversationDetailView - Conversation status verified: \(conversationStatus.status)")
-
-        } catch let error as NetworkError {
-            if case .conversationNotFound = error {
-                print("[ERROR] ConversationDetailView - Conversation no longer exists (deleted or expired)")
-                // Conversation was deleted - clean up locally
-                stopPolling()
-                await MainActor.run {
-                    ConversationLinkStore.shared.deleteLink(for: conversation.id)
-                    KeyStore.shared.deleteKey(for: conversation.id)
-                    errorMessage = "This conversation has been deleted"
-                }
-            } else {
-                print("[ERROR] ConversationDetailView - Polling error: \(error)")
-                // Don't show other polling errors to user - silently continue polling
-            }
-        } catch {
-            print("[ERROR] ConversationDetailView - Unexpected polling error: \(error)")
-            // Don't show polling errors to user - silently continue polling
-        }
-    }
 
     @MainActor
     private func sendMessage() async {
@@ -356,12 +248,6 @@ struct ConversationDetailView: View {
             newMessage.decryptedContent = trimmedMessage
 
             messages.append(newMessage)
-
-            // Update polling timestamp to the newly sent message's timestamp
-            if let createdAt = newMessage.createdAt {
-                lastMessageTimestamp = createdAt
-                print("[DEBUG] sendMessage - Updated lastMessageTimestamp to newly sent message: \(createdAt)")
-            }
 
             messageText = ""
             messageFieldFocused = false
@@ -436,7 +322,9 @@ struct ConversationDetailView: View {
     // MARK: - Push Notification Integration
 
     private func setupPushNotificationListener() {
-        print("[DEBUG] ConversationDetailView - Setting up push notification listener")
+        print("[DEBUG] ConversationDetailView - Setting up push notification listener for conversation: \(conversation.id)")
+
+        let currentConversationHash = hashConversationId(conversation.id)
 
         NotificationCenter.default.addObserver(
             forName: PushNotificationService.newMessageReceivedNotification,
@@ -446,9 +334,17 @@ struct ConversationDetailView: View {
             // Check if this push is for our conversation
             if let userInfo = notification.userInfo,
                let conversationHash = userInfo["conversationHash"] as? String {
-                // Note: We can't easily access self properties from a struct in a notification observer
-                // So we'll just log the push and rely on regular polling to fetch messages
-                print("[DEBUG] ConversationDetailView - Push notification received, will fetch on next poll")
+
+                if conversationHash == currentConversationHash {
+                    print("[DEBUG] ConversationDetailView - Push notification received for our conversation, fetching new messages")
+
+                    // Reload messages when push arrives for this conversation
+                    Task {
+                        await self.loadMessages()
+                    }
+                } else {
+                    print("[DEBUG] ConversationDetailView - Push notification received for different conversation (hash: \(conversationHash)), ignoring")
+                }
             }
         }
     }
