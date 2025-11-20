@@ -73,7 +73,11 @@ struct ConversationDetailView: View {
                             TextField("Type a message...", text: $messageText, axis: .vertical)
                                 .lineLimit(5)
                                 .focused($messageFieldFocused)
-                                .textFieldStyle(.roundedBorder)
+                                .font(.system(size: 18, weight: .regular))
+                                .padding(12)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(20)
+                                .frame(minHeight: 44)
 
                             Button(action: {
                                 Task {
@@ -85,9 +89,13 @@ struct ConversationDetailView: View {
                                         .tint(.indigo)
                                 } else {
                                     Image(systemName: "paperplane.fill")
-                                        .foregroundColor(.indigo)
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundColor(.white)
                                 }
                             }
+                            .frame(width: 50, height: 50)
+                            .background(Color.indigo)
+                            .cornerRadius(25)
                             .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty || isSending || conversation.isExpired)
                         }
 
