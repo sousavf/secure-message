@@ -73,8 +73,8 @@ public class ApnsPushService {
             );
 
             apnsClient = new ApnsClientBuilder()
-                    //.setApnsServer("api.sandbox.push.apple.com")
-                    .setApnsServer("api.push.apple.com")
+                    .setApnsServer("api.sandbox.push.apple.com")
+                    //.setApnsServer("api.push.apple.com")
                     .setSigningKey(signingKey)
                     .build();
 
