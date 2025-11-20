@@ -85,16 +85,19 @@ struct ConversationDetailView: View {
                             .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty || isSending || conversation.isExpired)
                         }
 
-                        HStack {
-                            Button(action: generateShareLink) {
-                                HStack {
-                                    Image(systemName: "square.and.arrow.up")
-                                    Text("Share Conversation")
+                        // Only show share button for conversation creator
+                        if conversation.isCreatedByCurrentDevice {
+                            HStack {
+                                Button(action: generateShareLink) {
+                                    HStack {
+                                        Image(systemName: "square.and.arrow.up")
+                                        Text("Share Conversation")
+                                    }
+                                    .frame(maxWidth: .infinity)
                                 }
-                                .frame(maxWidth: .infinity)
+                                .buttonStyle(.bordered)
+                                .foregroundColor(.indigo)
                             }
-                            .buttonStyle(.bordered)
-                            .foregroundColor(.indigo)
                         }
                     }
                     .padding()
