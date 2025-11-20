@@ -7,6 +7,7 @@ import pt.sousavf.securemessaging.entity.Conversation;
 import pt.sousavf.securemessaging.entity.Message;
 import pt.sousavf.securemessaging.repository.ConversationRepository;
 import pt.sousavf.securemessaging.repository.MessageRepository;
+import pt.sousavf.securemessaging.repository.MessageRedisRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,9 @@ public class MessageService {
 
     @Autowired
     private SubscriptionService subscriptionService;
+
+    @Autowired(required = false)
+    private MessageRedisRepository messageRedisRepository;
 
     @Autowired(required = false)
     private ConversationService conversationService;
@@ -216,6 +220,12 @@ public class MessageService {
         Message savedMessage = messageRepository.save(message);
         logger.info("Conversation message created with ID: {}, conversation: {}", savedMessage.getId(), conversationId);
 
+        // Invalidate cached messages for this conversation (new message added)
+        if (messageRedisRepository != null) {
+            messageRedisRepository.invalidateConversationMessages(conversationId);
+            messageRedisRepository.storeMessage(savedMessage);  // Cache the new message
+        }
+
         // Send push notification to other participants
         if (apnsPushService != null && conversationService != null) {
             try {
@@ -231,6 +241,7 @@ public class MessageService {
 
     /**
      * Get all active messages in a conversation
+     * Tries to retrieve from Redis cache first, falls back to database if not cached
      */
     public List<MessageResponse> getConversationMessages(UUID conversationId) {
         logger.info("Retrieving messages for conversation: {}", conversationId);
@@ -243,6 +254,18 @@ public class MessageService {
             throw new IllegalStateException("Conversation is no longer active");
         }
 
+        // Try to get from Redis cache first
+        if (messageRedisRepository != null && messageRedisRepository.hasConversationMessages(conversationId)) {
+            List<Message> cachedMessages = messageRedisRepository.getConversationMessages(conversationId);
+            if (!cachedMessages.isEmpty()) {
+                logger.info("Retrieved {} cached messages for conversation: {}", cachedMessages.size(), conversationId);
+                return cachedMessages.stream()
+                    .map(MessageResponse::fromMessage)
+                    .collect(Collectors.toList());
+            }
+        }
+
+        // Fall back to database
         List<Message> messages = messageRepository.findActiveByConversationId(conversationId);
         logger.info("Found {} active messages for conversation: {} (current time: {})",
             messages.size(), conversationId, LocalDateTime.now());
@@ -250,6 +273,11 @@ public class MessageService {
         for (Message msg : messages) {
             logger.debug("Message ID: {}, expiresAt: {}, isExpired: {}",
                 msg.getId(), msg.getExpiresAt(), msg.isExpired());
+        }
+
+        // Cache the result in Redis
+        if (messageRedisRepository != null && !messages.isEmpty()) {
+            messageRedisRepository.storeConversationMessages(conversationId, messages);
         }
 
         return messages.stream()

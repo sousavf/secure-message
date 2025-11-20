@@ -1,6 +1,23 @@
 version: '3.8'
 
 services:
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: safe-whisper-redis-prod
+    command: redis-server --appendonly yes --maxmemory ${REDIS_MAX_MEMORY:-512mb} --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - safe-whisper-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
@@ -30,27 +47,33 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-safe_whisper}
       DB_USERNAME: ${DB_USER:-safe_user}
       DB_PASSWORD: ${DB_PASSWORD}
-      
+
+      # Redis connection
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+
       # JPA/Hibernate settings
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: false
-      
+
       # Server settings
       SERVER_PORT: 8080
-      
+
       # Security settings (enable SSL in production)
       SPRING_SECURITY_REQUIRE_SSL: ${REQUIRE_SSL:-false}
-      
+
       # CORS settings (update for production)
       APP_SECURITY_CORS_ALLOWED_ORIGINS_0: ${CORS_ORIGIN_1:-http://localhost:3000}
       APP_SECURITY_CORS_ALLOWED_ORIGINS_1: ${CORS_ORIGIN_2:-https://localhost:3000}
-      
+
       # Logging
       LOGGING_LEVEL_ROOT: WARN
       LOGGING_LEVEL_COM_EXAMPLE_SECUREMESSAGING: INFO
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
+      redis:
+        condition: service_healthy
       postgres:
         condition: service_healthy
     networks:
@@ -69,4 +92,6 @@ networks:
 
 volumes:
   postgres_prod_data:
+    driver: local
+  redis_prod_data:
     driver: local

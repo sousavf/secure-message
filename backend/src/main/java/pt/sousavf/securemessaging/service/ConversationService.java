@@ -8,7 +8,9 @@ import pt.sousavf.securemessaging.entity.ConversationParticipant;
 import pt.sousavf.securemessaging.entity.User;
 import pt.sousavf.securemessaging.repository.ConversationRepository;
 import pt.sousavf.securemessaging.repository.ConversationParticipantRepository;
+import pt.sousavf.securemessaging.repository.ConversationRedisRepository;
 import pt.sousavf.securemessaging.repository.MessageRepository;
+import pt.sousavf.securemessaging.repository.MessageRedisRepository;
 import pt.sousavf.securemessaging.repository.UserRepository;
 import pt.sousavf.securemessaging.repository.DeviceTokenRepository;
 import org.slf4j.Logger;
@@ -45,6 +47,12 @@ public class ConversationService {
     @Autowired
     private DeviceTokenRepository deviceTokenRepository;
 
+    @Autowired(required = false)
+    private ConversationRedisRepository conversationRedisRepository;
+
+    @Autowired(required = false)
+    private MessageRedisRepository messageRedisRepository;
+
     /**
      * Create a new conversation (only business users with premium subscription can create)
      */
@@ -70,6 +78,12 @@ public class ConversationService {
         // Create and save conversation
         Conversation conversation = new Conversation(user.getId(), expiresAt);
         Conversation savedConversation = conversationRepository.save(conversation);
+
+        // Cache in Redis
+        if (conversationRedisRepository != null) {
+            conversationRedisRepository.storeConversation(savedConversation);
+            conversationRedisRepository.addConversationToDevice(deviceId, savedConversation);
+        }
 
         // Track the initiator as a participant
         ConversationParticipant initiatorParticipant = new ConversationParticipant(
@@ -152,6 +166,18 @@ public class ConversationService {
         conversation.setStatus(Conversation.ConversationStatus.DELETED);
         conversationRepository.save(conversation);
         logger.info("Conversation marked as deleted: {}", conversationId);
+
+        // Invalidate caches
+        if (conversationRedisRepository != null) {
+            conversationRedisRepository.invalidateConversation(conversationId);
+            // Invalidate for all participant devices
+            for (String participantDeviceId : participantDeviceIds) {
+                conversationRedisRepository.removeConversationFromDevice(participantDeviceId, conversationId);
+            }
+        }
+        if (messageRedisRepository != null) {
+            messageRedisRepository.invalidateConversationMessages(conversationId);
+        }
 
         // Delete all associated messages
         messageRepository.deleteByConversationId(conversationId);

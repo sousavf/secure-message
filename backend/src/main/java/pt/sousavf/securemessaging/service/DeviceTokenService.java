@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import pt.sousavf.securemessaging.entity.DeviceToken;
 import pt.sousavf.securemessaging.repository.DeviceTokenRepository;
+import pt.sousavf.securemessaging.repository.DeviceTokenRedisRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,13 +16,17 @@ public class DeviceTokenService {
     private static final Logger logger = LoggerFactory.getLogger(DeviceTokenService.class);
 
     private final DeviceTokenRepository deviceTokenRepository;
+    private final DeviceTokenRedisRepository redisRepository;
 
-    public DeviceTokenService(DeviceTokenRepository deviceTokenRepository) {
+    public DeviceTokenService(DeviceTokenRepository deviceTokenRepository,
+                            DeviceTokenRedisRepository redisRepository) {
         this.deviceTokenRepository = deviceTokenRepository;
+        this.redisRepository = redisRepository;
     }
 
     /**
      * Register or update an APNs token for a device
+     * Uses write-through strategy: writes to both Redis cache and database
      */
     public DeviceToken registerToken(String deviceId, String apnsToken) {
         logger.info("Registering APNs token for device: {}", deviceId);
@@ -35,7 +40,10 @@ public class DeviceTokenService {
                 logger.debug("Token already registered for device {}, updating timestamp", deviceId);
                 DeviceToken token = existingToken.get();
                 token.setActive(true);
-                return deviceTokenRepository.save(token);
+                DeviceToken savedToken = deviceTokenRepository.save(token);
+                // Update Redis cache
+                redisRepository.storeToken(apnsToken, savedToken);
+                return savedToken;
             } else {
                 // Token moved to different device - UPDATE existing record instead of creating new
                 logger.info("Token moving from device {} to device {}",
@@ -47,6 +55,8 @@ public class DeviceTokenService {
                 for (DeviceToken token : otherPreviousTokens) {
                     token.setActive(false);
                     deviceTokenRepository.save(token);
+                    // Invalidate old token in Redis
+                    redisRepository.invalidateToken(token.getApnsToken());
                 }
 
                 // Update the existing token to point to the new device
@@ -54,6 +64,8 @@ public class DeviceTokenService {
                 token.setDeviceId(deviceId);
                 token.setActive(true);
                 DeviceToken savedToken = deviceTokenRepository.save(token);
+                // Update Redis cache
+                redisRepository.storeToken(apnsToken, savedToken);
                 logger.info("APNs token transferred to device: {}", deviceId);
                 return savedToken;
             }
@@ -65,11 +77,15 @@ public class DeviceTokenService {
         for (DeviceToken token : previousTokens) {
             token.setActive(false);
             deviceTokenRepository.save(token);
+            // Invalidate old token in Redis
+            redisRepository.invalidateToken(token.getApnsToken());
         }
 
         // Create and save new token
         DeviceToken newToken = new DeviceToken(deviceId, apnsToken);
         DeviceToken savedToken = deviceTokenRepository.save(newToken);
+        // Store in Redis cache
+        redisRepository.storeToken(apnsToken, savedToken);
         logger.info("APNs token registered successfully for device: {}", deviceId);
 
         return savedToken;
@@ -100,6 +116,8 @@ public class DeviceTokenService {
         deviceTokenRepository.findByApnsToken(apnsToken).ifPresent(token -> {
             token.setActive(false);
             deviceTokenRepository.save(token);
+            // Invalidate in Redis cache
+            redisRepository.invalidateToken(apnsToken);
             logger.info("Token deactivated for device: {}", token.getDeviceId());
         });
     }
@@ -111,6 +129,8 @@ public class DeviceTokenService {
         logger.info("Removing all tokens for device: {}", deviceId);
         List<DeviceToken> tokens = deviceTokenRepository.findAllByDeviceId(deviceId);
         deviceTokenRepository.deleteAll(tokens);
+        // Invalidate all device tokens in Redis
+        redisRepository.invalidateAllDeviceTokens(deviceId);
         logger.info("All tokens removed for device: {}", deviceId);
     }
 }
