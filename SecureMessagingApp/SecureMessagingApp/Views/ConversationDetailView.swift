@@ -336,11 +336,33 @@ struct ConversationDetailView: View {
                let conversationHash = userInfo["conversationHash"] as? String {
 
                 if conversationHash == currentConversationHash {
-                    print("[DEBUG] ConversationDetailView - Push notification received for our conversation, fetching new messages")
+                    // Check the notification type
+                    if let notificationType = userInfo["type"] as? String {
+                        print("[DEBUG] ConversationDetailView - Push notification received, type: \(notificationType)")
 
-                    // Reload messages when push arrives for this conversation
-                    Task {
-                        await self.loadMessages()
+                        switch notificationType {
+                        case "deleted":
+                            print("[DEBUG] ConversationDetailView - Conversation was deleted")
+                            Task {
+                                await self.handleConversationDeleted()
+                            }
+                        case "expired":
+                            print("[DEBUG] ConversationDetailView - Conversation expired")
+                            Task {
+                                await self.handleConversationExpired()
+                            }
+                        default:
+                            print("[DEBUG] ConversationDetailView - New message received, fetching new messages")
+                            Task {
+                                await self.loadMessages()
+                            }
+                        }
+                    } else {
+                        print("[DEBUG] ConversationDetailView - Push notification received (regular message), fetching new messages")
+                        // Reload messages when push arrives for this conversation
+                        Task {
+                            await self.loadMessages()
+                        }
                     }
                 } else {
                     print("[DEBUG] ConversationDetailView - Push notification received for different conversation (hash: \(conversationHash)), ignoring")
@@ -349,14 +371,48 @@ struct ConversationDetailView: View {
         }
     }
 
+    @MainActor
+    private func handleConversationDeleted() async {
+        print("[DEBUG] ConversationDetailView - Handling conversation deletion")
+
+        // Delete from local storage
+        ConversationLinkStore.shared.deleteLink(for: conversation.id)
+        KeyStore.shared.deleteKey(for: conversation.id)
+
+        // Show toast with error message
+        errorMessage = "Conversation has been deleted"
+
+        // Navigation will be handled by ConversationListView when it detects the conversation is missing
+        // For now, just trigger the onUpdate callback which will refresh the list
+        onUpdate()
+    }
+
+    @MainActor
+    private func handleConversationExpired() async {
+        print("[DEBUG] ConversationDetailView - Handling conversation expiration")
+
+        // Delete from local storage
+        ConversationLinkStore.shared.deleteLink(for: conversation.id)
+        KeyStore.shared.deleteKey(for: conversation.id)
+
+        // Show toast with error message
+        errorMessage = "Conversation has expired"
+
+        // Navigation will be handled by ConversationListView when it detects the conversation is missing
+        // For now, just trigger the onUpdate callback which will refresh the list
+        onUpdate()
+    }
+
     private func removePushNotificationListener() {
         print("[DEBUG] ConversationDetailView - Removing push notification listener")
         NotificationCenter.default.removeObserver(self, name: PushNotificationService.newMessageReceivedNotification, object: nil)
     }
 
     /// Hash conversation ID to match backend implementation
+    /// Must use lowercase UUID string to match Java's UUID.toString() format
     private func hashConversationId(_ id: UUID) -> String {
-        let data = id.uuidString.data(using: .utf8)!
+        let lowercaseUUID = id.uuidString.lowercased()
+        let data = lowercaseUUID.data(using: .utf8)!
         let hash = SHA256.hash(data: data)
         let hashString = hash.compactMap { String(format: "%02x", $0) }.joined()
         return String(hashString.prefix(32))

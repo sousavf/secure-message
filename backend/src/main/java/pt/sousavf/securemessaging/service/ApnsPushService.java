@@ -195,6 +195,127 @@ public class ApnsPushService {
     }
 
     /**
+     * Send deletion notification to all participants in a conversation except the initiator
+     */
+    @Async
+    public void sendConversationDeletedPush(UUID conversationId, List<String> participantDeviceIds, String excludeDeviceId) {
+        // Filter out the initiator who deleted it
+        List<String> recipientDevices = participantDeviceIds.stream()
+                .filter(deviceId -> !deviceId.equals(excludeDeviceId))
+                .toList();
+
+        if (recipientDevices.isEmpty()) {
+            logger.debug("No recipient devices to notify for conversation deletion {}", conversationId);
+            return;
+        }
+
+        logger.info("Sending deletion notification to {} recipients for conversation {}",
+                recipientDevices.size(), conversationId);
+
+        // Get device tokens for recipients
+        List<DeviceToken> tokens = deviceTokenRepository.findByDeviceIdIn(recipientDevices).stream()
+                .filter(DeviceToken::isActive)
+                .toList();
+
+        logger.info("Found {} active tokens for deletion notification", tokens.size());
+
+        for (DeviceToken token : tokens) {
+            sendConversationDeletedAlert(token.getApnsToken(), conversationId);
+        }
+    }
+
+    /**
+     * Send expiration notification to all participants in a conversation
+     */
+    @Async
+    public void sendConversationExpiredPush(UUID conversationId, List<String> participantDeviceIds) {
+        if (participantDeviceIds.isEmpty()) {
+            logger.debug("No recipient devices to notify for conversation expiration {}", conversationId);
+            return;
+        }
+
+        logger.info("Sending expiration notification to {} recipients for conversation {}",
+                participantDeviceIds.size(), conversationId);
+
+        // Get device tokens for all participants
+        List<DeviceToken> tokens = deviceTokenRepository.findByDeviceIdIn(participantDeviceIds).stream()
+                .filter(DeviceToken::isActive)
+                .toList();
+
+        logger.info("Found {} active tokens for expiration notification", tokens.size());
+
+        for (DeviceToken token : tokens) {
+            sendConversationExpiredAlert(token.getApnsToken(), conversationId);
+        }
+    }
+
+    /**
+     * Send alert for conversation deletion
+     */
+    private void sendConversationDeletedAlert(String deviceToken, UUID conversationId) {
+        if (!apnsEnabled || apnsClient == null) {
+            logger.warn("APNs is not enabled or client not initialized, skipping push");
+            return;
+        }
+
+        try {
+            String hashedConvId = hashConversationId(conversationId);
+            logger.info("Sending deletion alert to token: {}... for conversation: {} (hash: {})",
+                    deviceToken.substring(0, Math.min(8, deviceToken.length())), conversationId, hashedConvId);
+
+            // Build deletion alert payload
+            String payload = String.format(
+                    "{\"aps\":{\"alert\":{\"title\":\"Conversation Deleted\",\"body\":\"This conversation has been deleted\"},\"sound\":\"default\",\"mutable-content\":1},\"c\":\"%s\",\"type\":\"deleted\"}",
+                    hashedConvId
+            );
+
+            SimpleApnsPushNotification notification = new SimpleApnsPushNotification(
+                    deviceToken,
+                    topic,
+                    payload
+            );
+
+            sendNotificationAsync(notification, deviceToken);
+
+        } catch (Exception e) {
+            logger.error("Error building deletion alert push notification for conversation {}", conversationId, e);
+        }
+    }
+
+    /**
+     * Send alert for conversation expiration
+     */
+    private void sendConversationExpiredAlert(String deviceToken, UUID conversationId) {
+        if (!apnsEnabled || apnsClient == null) {
+            logger.warn("APNs is not enabled or client not initialized, skipping push");
+            return;
+        }
+
+        try {
+            String hashedConvId = hashConversationId(conversationId);
+            logger.info("Sending expiration alert to token: {}... for conversation: {} (hash: {})",
+                    deviceToken.substring(0, Math.min(8, deviceToken.length())), conversationId, hashedConvId);
+
+            // Build expiration alert payload
+            String payload = String.format(
+                    "{\"aps\":{\"alert\":{\"title\":\"Conversation Expired\",\"body\":\"This conversation has expired\"},\"sound\":\"default\",\"mutable-content\":1},\"c\":\"%s\",\"type\":\"expired\"}",
+                    hashedConvId
+            );
+
+            SimpleApnsPushNotification notification = new SimpleApnsPushNotification(
+                    deviceToken,
+                    topic,
+                    payload
+            );
+
+            sendNotificationAsync(notification, deviceToken);
+
+        } catch (Exception e) {
+            logger.error("Error building expiration alert push notification for conversation {}", conversationId, e);
+        }
+    }
+
+    /**
      * Send notification asynchronously and handle response
      */
     private void sendNotificationAsync(SimpleApnsPushNotification notification, String deviceToken) {

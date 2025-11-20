@@ -116,11 +116,18 @@ class PushNotificationService {
         if let conversationHash = userInfo["c"] as? String {
             print("[DEBUG] PushNotificationService - Received push for conversation hash: \(conversationHash)")
 
-            // Notify observers to refresh messages
+            // Extract notification type if present
+            var notificationInfo: [String: Any] = ["conversationHash": conversationHash]
+            if let notificationType = userInfo["type"] as? String {
+                print("[DEBUG] PushNotificationService - Notification type: \(notificationType)")
+                notificationInfo["type"] = notificationType
+            }
+
+            // Notify observers to refresh messages or handle deletion/expiration
             NotificationCenter.default.post(
                 name: PushNotificationService.newMessageReceivedNotification,
                 object: nil,
-                userInfo: ["conversationHash": conversationHash]
+                userInfo: notificationInfo
             )
         }
     }
@@ -136,9 +143,10 @@ class PushNotificationService {
     // MARK: - Private Methods
 
     /// Hash conversation ID to match backend implementation
-    /// Must match the backend SHA256 implementation
+    /// Must use lowercase UUID string to match Java's UUID.toString() format
     private func hashConversationId(_ id: UUID) -> String {
-        let data = id.uuidString.data(using: .utf8)!
+        let lowercaseUUID = id.uuidString.lowercased()
+        let data = lowercaseUUID.data(using: .utf8)!
         let hash = SHA256.hash(data: data)
         let hashString = hash.compactMap { String(format: "%02x", $0) }.joined()
         return String(hashString.prefix(32))

@@ -10,6 +10,7 @@ import pt.sousavf.securemessaging.repository.ConversationRepository;
 import pt.sousavf.securemessaging.repository.ConversationParticipantRepository;
 import pt.sousavf.securemessaging.repository.MessageRepository;
 import pt.sousavf.securemessaging.repository.UserRepository;
+import pt.sousavf.securemessaging.repository.DeviceTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,12 @@ public class ConversationService {
 
     @Autowired
     private SubscriptionService subscriptionService;
+
+    @Autowired
+    private ApnsPushService apnsPushService;
+
+    @Autowired
+    private DeviceTokenRepository deviceTokenRepository;
 
     /**
      * Create a new conversation (only business users with premium subscription can create)
@@ -109,7 +116,7 @@ public class ConversationService {
 
     /**
      * Delete a conversation (only initiator can delete)
-     * This marks all participants as departed
+     * This marks all participants as departed and sends push notifications
      */
     @Transactional
     public void deleteConversation(UUID conversationId, String deviceId) {
@@ -126,8 +133,13 @@ public class ConversationService {
             throw new IllegalStateException("Only conversation initiator can delete it");
         }
 
-        // Mark all participants as departed
+        // Get all participants before marking as deleted
         List<ConversationParticipant> participants = participantRepository.findByConversationId(conversationId);
+        List<String> participantDeviceIds = participants.stream()
+                .map(ConversationParticipant::getDeviceId)
+                .toList();
+
+        // Mark all participants as departed
         for (ConversationParticipant participant : participants) {
             if (participant.isActive()) {
                 participant.markAsDeparted();
@@ -143,6 +155,10 @@ public class ConversationService {
 
         // Delete all associated messages
         messageRepository.deleteByConversationId(conversationId);
+
+        // Send deletion notification to all participants (except the initiator who is deleting it)
+        logger.info("Sending deletion notification to {} participants", participantDeviceIds.size());
+        apnsPushService.sendConversationDeletedPush(conversationId, participantDeviceIds, deviceId);
     }
 
     /**
@@ -162,7 +178,7 @@ public class ConversationService {
     }
 
     /**
-     * Scheduled task to mark conversations as expired
+     * Scheduled task to mark conversations as expired and notify participants
      */
     @Transactional
     public void expireConversations() {
@@ -170,6 +186,16 @@ public class ConversationService {
         for (Conversation conversation : expiredConversations) {
             conversation.setStatus(Conversation.ConversationStatus.EXPIRED);
             conversationRepository.save(conversation);
+
+            // Notify all participants that the conversation has expired
+            List<ConversationParticipant> participants = participantRepository.findByConversationId(conversation.getId());
+            List<String> participantDeviceIds = participants.stream()
+                    .map(ConversationParticipant::getDeviceId)
+                    .toList();
+
+            logger.info("Sending expiration notification to {} participants for conversation {}",
+                    participantDeviceIds.size(), conversation.getId());
+            apnsPushService.sendConversationExpiredPush(conversation.getId(), participantDeviceIds);
         }
     }
 
