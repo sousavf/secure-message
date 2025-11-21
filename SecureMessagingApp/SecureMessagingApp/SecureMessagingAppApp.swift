@@ -3,12 +3,22 @@ import SwiftUI
 @main
 struct SecureMessagingAppApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @Environment(\.scenePhase) var scenePhase
 
     var body: some Scene {
         WindowGroup {
             MainView()
                 .onOpenURL { url in
                     handleIncomingURL(url)
+                }
+                .onChange(of: scenePhase) { newPhase in
+                    if newPhase == .active {
+                        // App came to foreground - force re-register token to ensure backend has it
+                        Task {
+                            print("[DEBUG] SecureMessagingAppApp - App entered foreground, force refreshing APNs token")
+                            await PushNotificationService.shared.forceTokenRefresh()
+                        }
+                    }
                 }
         }
     }

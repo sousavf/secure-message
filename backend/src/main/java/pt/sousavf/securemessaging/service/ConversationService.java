@@ -72,8 +72,8 @@ public class ConversationService {
         //    throw new IllegalStateException("Only premium subscription users can create conversations");
         }
 
-        // Calculate expiration time
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(ttlHours);
+        // Calculate expiration time using UTC to avoid timezone issues
+        LocalDateTime expiresAt = LocalDateTime.now(java.time.ZoneId.of("UTC")).plusHours(ttlHours);
 
         // Create and save conversation
         Conversation conversation = new Conversation(user.getId(), expiresAt);
@@ -230,7 +230,7 @@ public class ConversationService {
      */
     @Transactional
     public void cleanupDeletedConversations() {
-        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(1);
+        LocalDateTime cutoffTime = LocalDateTime.now(java.time.ZoneId.of("UTC")).minusHours(1);
         List<Conversation> deletedConversations = conversationRepository.findDeletedConversationsOlderThan(cutoffTime);
         conversationRepository.deleteAll(deletedConversations);
     }

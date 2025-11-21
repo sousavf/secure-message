@@ -136,7 +136,7 @@ public class Message {
     }
 
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return LocalDateTime.now(java.time.ZoneId.of("UTC")).isAfter(expiresAt);
     }
 
     public String getSenderDeviceId() {

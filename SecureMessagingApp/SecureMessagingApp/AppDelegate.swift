@@ -14,11 +14,20 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Set push notification delegate
         UNUserNotificationCenter.current().delegate = self
 
-        // Request push notification permissions and refresh token if needed
+        // Request push notification permissions and register for remote notifications
         Task {
-            await PushNotificationService.shared.requestAuthorization()
-            // Check if token needs refresh (24 hour expiry)
-            await PushNotificationService.shared.refreshTokenIfNeeded()
+            print("[DEBUG] AppDelegate - Requesting authorization")
+            let authorized = await PushNotificationService.shared.requestAuthorization()
+            print("[DEBUG] AppDelegate - Authorization result: \(authorized)")
+
+            // Add a small delay before requesting remote notifications
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+
+            print("[DEBUG] AppDelegate - Requesting remote notifications")
+            await MainActor.run {
+                UIApplication.shared.registerForRemoteNotifications()
+                print("[DEBUG] AppDelegate - registerForRemoteNotifications() called")
+            }
         }
 
         return true

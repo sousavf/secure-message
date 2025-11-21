@@ -68,9 +68,9 @@ public class MessageService {
                                 messageSize, maxSize));
             }
         }
-        
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(defaultTtlHours);
-        
+
+        LocalDateTime expiresAt = LocalDateTime.now(java.time.ZoneId.of("UTC")).plusHours(defaultTtlHours);
+
         Message message = new Message(
             request.getCiphertext(),
             request.getNonce(),
@@ -106,8 +106,8 @@ public class MessageService {
     @Transactional
     public Optional<MessageResponse> retrieveMessage(UUID messageId) {
         logger.info("Attempting to retrieve message with ID: {}", messageId);
-        
-        Optional<Message> messageOpt = messageRepository.findAvailableMessage(messageId, LocalDateTime.now());
+
+        Optional<Message> messageOpt = messageRepository.findAvailableMessage(messageId, LocalDateTime.now(java.time.ZoneId.of("UTC")));
         
         if (messageOpt.isEmpty()) {
             logger.warn("Message not found or already consumed/expired: {}", messageId);
@@ -136,7 +136,7 @@ public class MessageService {
 
     public StatsResponse getDailyStats(LocalDate date) {
         LocalDateTime dateTime = date.atStartOfDay();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("UTC"));
         
         long messagesCreated = messageRepository.countMessagesCreatedOnDate(dateTime);
         long messagesRead = messageRepository.countMessagesReadOnDate(dateTime);
@@ -154,7 +154,7 @@ public class MessageService {
     public void cleanupExpiredMessages() {
         logger.info("Starting cleanup of expired messages");
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("UTC"));
         LocalDateTime consumedThreshold = now.minusHours(1);
 
         int expiredDeleted = messageRepository.deleteExpiredMessages(now);
@@ -203,7 +203,7 @@ public class MessageService {
             }
         }
 
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(defaultTtlHours);
+        LocalDateTime expiresAt = LocalDateTime.now(java.time.ZoneId.of("UTC")).plusHours(defaultTtlHours);
 
         Message message = new Message(
             request.getCiphertext(),
@@ -268,7 +268,7 @@ public class MessageService {
         // Fall back to database
         List<Message> messages = messageRepository.findActiveByConversationId(conversationId);
         logger.info("Found {} active messages for conversation: {} (current time: {})",
-            messages.size(), conversationId, LocalDateTime.now());
+            messages.size(), conversationId, LocalDateTime.now(java.time.ZoneId.of("UTC")));
 
         for (Message msg : messages) {
             logger.debug("Message ID: {}, expiresAt: {}, isExpired: {}",

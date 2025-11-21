@@ -112,8 +112,11 @@ struct Conversation: Identifiable, Codable {
     }
 
     var ttlHours: Int {
-        let hours = Int(expiresAt.timeIntervalSince(createdAt) / 3600)
-        return max(1, hours) // At least 1 hour
+        // Calculate hours as double first, then round to nearest integer
+        let hours = expiresAt.timeIntervalSince(createdAt) / 3600
+        // Use proper rounding instead of truncation to avoid off-by-one errors
+        let roundedHours = Int(hours.rounded())
+        return max(1, roundedHours) // At least 1 hour
     }
 
     var isExpired: Bool {

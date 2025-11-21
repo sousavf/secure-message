@@ -50,6 +50,15 @@ class PushNotificationService {
         }
     }
 
+    /// Force re-register APNs token (called when app comes to foreground)
+    /// This ensures the backend always has a valid token even if app was backgrounded
+    func forceTokenRefresh() async {
+        print("[DEBUG] PushNotificationService - Force refreshing APNs token")
+        await MainActor.run {
+            UIApplication.shared.registerForRemoteNotifications()
+        }
+    }
+
     /// Register APNs token with backend
     func registerToken(_ apnsToken: String) async {
         let deviceId = persistentDeviceID
