@@ -32,6 +32,10 @@ public class DeviceTokenController {
             @Valid @RequestBody RegisterDeviceTokenRequest request,
             @RequestHeader(value = "X-Device-ID", required = true) String deviceId) {
         try {
+            logger.info("========== RECEIVED TOKEN REGISTRATION REQUEST ==========");
+            logger.info("Device ID from header: {}", deviceId);
+            logger.info("APNs Token: {}", request.getApnsToken() != null ? request.getApnsToken().substring(0, Math.min(16, request.getApnsToken().length())) + "..." : "NULL");
+
             if (deviceId == null || deviceId.isBlank()) {
                 logger.warn("Device ID is missing in request");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -40,6 +44,7 @@ public class DeviceTokenController {
 
             logger.info("Registering APNs token for device: {}", deviceId);
             DeviceToken token = deviceTokenService.registerToken(deviceId, request.getApnsToken());
+            logger.info("========== TOKEN REGISTERED SUCCESSFULLY ==========");
 
             return ResponseEntity.status(HttpStatus.CREATED).body(new TokenResponse(
                     token.getId().toString(),
@@ -47,7 +52,7 @@ public class DeviceTokenController {
                     "Token registered successfully"
             ));
         } catch (Exception e) {
-            logger.error("Error registering device token", e);
+            logger.error("========== ERROR REGISTERING TOKEN ==========", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorMessage("Failed to register device token"));
         }

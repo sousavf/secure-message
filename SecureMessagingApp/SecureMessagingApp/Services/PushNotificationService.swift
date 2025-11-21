@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 import UserNotifications
 import CryptoKit
+import os.log
 
 class PushNotificationService {
     static let shared = PushNotificationService()
@@ -10,6 +11,7 @@ class PushNotificationService {
     private let tokenRefreshInterval: TimeInterval = 24 * 60 * 60  // 24 hours
     private let lastTokenRegistrationKey = "lastAPNsTokenRegistration"
     private let lastRegisteredTokenKey = "lastRegisteredAPNsToken"
+    private let logger = OSLog(subsystem: "pt.sousavf.Safe-Whisper", category: "APNs")
 
     // Notification name for when new messages arrive
     static let newMessageReceivedNotification = NSNotification.Name("newMessageReceived")
@@ -54,57 +56,105 @@ class PushNotificationService {
     /// This ensures the backend always has a valid token even if app was backgrounded
     func forceTokenRefresh() async {
         print("[DEBUG] PushNotificationService - Force refreshing APNs token")
+        os_log("[APNs] Force refreshing APNs token", log: self.logger, type: .info)
+
+        // First, try to re-register with the last known token
+        let defaults = UserDefaults.standard
+        if let lastToken = defaults.string(forKey: lastRegisteredTokenKey) {
+            os_log("[APNs] Attempting to re-register last known token", log: self.logger, type: .debug)
+            print("[DEBUG] PushNotificationService - Attempting to re-register last known token")
+            // Force re-registration by clearing the timestamp
+            defaults.set(0, forKey: lastTokenRegistrationKey)
+            await registerToken(lastToken)
+        }
+
+        // Then request a fresh token from Apple
         await MainActor.run {
             UIApplication.shared.registerForRemoteNotifications()
+            os_log("[APNs] Called registerForRemoteNotifications()", log: self.logger, type: .debug)
         }
     }
 
     /// Register APNs token with backend
     func registerToken(_ apnsToken: String) async {
+        os_log("[APNs] registerToken() called with token: %{private}@...", log: self.logger, type: .info, String(apnsToken.prefix(16)))
+        print("[DEBUG] PushNotificationService - registerToken() called")
+
         let deviceId = persistentDeviceID
         let defaults = UserDefaults.standard
 
-        // Check if token has changed
+        os_log("[APNs] Device ID: %{private}@", log: self.logger, type: .debug, deviceId)
+        print("[DEBUG] PushNotificationService - Device ID: \(deviceId)")
+
+        // Check if token has been successfully registered before
         let lastToken = defaults.string(forKey: lastRegisteredTokenKey)
-        if lastToken == apnsToken {
-            print("[DEBUG] PushNotificationService - Token unchanged, skipping registration")
+        let lastRegistrationTime = defaults.double(forKey: lastTokenRegistrationKey)
+        let timeSinceLastRegistration = Date().timeIntervalSince1970 - lastRegistrationTime
+
+        os_log("[APNs] Last token was: %{private}@", log: self.logger, type: .debug, lastToken ?? "NONE")
+        os_log("[APNs] Time since last registration: %f seconds", log: self.logger, type: .debug, timeSinceLastRegistration)
+
+        // Skip only if token is the same AND it was registered within the last 24 hours
+        if lastToken == apnsToken && timeSinceLastRegistration < tokenRefreshInterval {
+            os_log("[APNs] Token unchanged and recently registered, skipping registration", log: self.logger, type: .debug)
+            print("[DEBUG] PushNotificationService - Token unchanged and recently registered, skipping registration")
             return
         }
 
+        os_log("[APNs] Registering APNs token for device: %{private}@", log: self.logger, type: .info, deviceId)
         print("[DEBUG] PushNotificationService - Registering APNs token for device: \(deviceId)")
 
         do {
+            os_log("[APNs] Creating RegisterDeviceTokenRequest with token", log: self.logger, type: .debug)
             let request = RegisterDeviceTokenRequest(apnsToken: apnsToken)
 
             // Create request manually to add X-Device-ID header
-            guard let url = URL(string: "https://privileged.stratholme.eu/api/devices/token") else {
-                print("[ERROR] PushNotificationService - Invalid URL")
+            let urlString = "https://privileged.stratholme.eu/api/devices/token"
+            guard let url = URL(string: urlString) else {
+                os_log("[APNs] Invalid URL: %@", log: self.logger, type: .error, urlString)
+                print("[ERROR] PushNotificationService - Invalid URL: \(urlString)")
                 return
             }
 
+            os_log("[APNs] URL is valid, creating URLRequest", log: self.logger, type: .debug)
             var urlRequest = URLRequest(url: url)
             urlRequest.httpMethod = "POST"
             urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
             urlRequest.setValue(deviceId, forHTTPHeaderField: "X-Device-ID")
 
+            os_log("[APNs] Encoding request body", log: self.logger, type: .debug)
             let encoder = JSONEncoder()
             urlRequest.httpBody = try encoder.encode(request)
 
-            let (_, response) = try await URLSession.shared.data(for: urlRequest)
+            os_log("[APNs] Making URLSession request to %@", log: self.logger, type: .info, urlString)
+            print("[DEBUG] PushNotificationService - Making URLSession request to \(urlString)")
+            let (data, response) = try await URLSession.shared.data(for: urlRequest)
 
+            os_log("[APNs] Received response from server", log: self.logger, type: .debug)
             if let httpResponse = response as? HTTPURLResponse {
+                os_log("[APNs] HTTP Status: %d", log: self.logger, type: .info, httpResponse.statusCode)
                 if httpResponse.statusCode == 201 || httpResponse.statusCode == 200 {
+                    os_log("[APNs] Token registered successfully with status %d", log: self.logger, type: .info, httpResponse.statusCode)
                     print("[DEBUG] PushNotificationService - APNs token registered successfully")
                     // Save registration timestamp and token for future checks
                     defaults.set(Date().timeIntervalSince1970, forKey: lastTokenRegistrationKey)
                     defaults.set(apnsToken, forKey: lastRegisteredTokenKey)
                 } else {
                     let msg = "Failed to register token, status: \(httpResponse.statusCode)"
+                    os_log("[APNs] %@", log: self.logger, type: .error, msg)
                     print("[ERROR] PushNotificationService - \(msg)")
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        os_log("[APNs] Response: %@", log: self.logger, type: .error, responseString)
+                        print("[ERROR] PushNotificationService - Response: \(responseString)")
+                    }
                 }
+            } else {
+                os_log("[APNs] Invalid response type", log: self.logger, type: .error)
+                print("[ERROR] PushNotificationService - Invalid response type")
             }
         } catch {
             let msg = "Failed to register APNs token: \(error)"
+            os_log("[APNs] %@", log: self.logger, type: .error, msg)
             print("[ERROR] PushNotificationService - \(msg)")
         }
     }
@@ -125,20 +175,25 @@ class PushNotificationService {
     /// Request push notification permissions
     func requestAuthorization() async -> Bool {
         do {
+            os_log("[APNs] Requesting UNUserNotificationCenter authorization", log: self.logger, type: .info)
             let granted = try await UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .sound, .badge])
 
             if granted {
+                os_log("[APNs] User GRANTED notification permission, calling registerForRemoteNotifications()", log: self.logger, type: .info)
                 print("[DEBUG] PushNotificationService - User granted notification permission")
                 await MainActor.run {
                     UIApplication.shared.registerForRemoteNotifications()
+                    os_log("[APNs] registerForRemoteNotifications() called", log: self.logger, type: .debug)
                 }
             } else {
+                os_log("[APNs] User DENIED notification permission", log: self.logger, type: .error)
                 print("[DEBUG] PushNotificationService - User denied notification permission")
             }
 
             return granted
         } catch {
+            os_log("[APNs] Failed to request authorization: %@", log: self.logger, type: .error, error.localizedDescription)
             print("[ERROR] PushNotificationService - Failed to request notification authorization: \(error)")
             return false
         }

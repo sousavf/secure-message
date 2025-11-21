@@ -1,7 +1,9 @@
 import UIKit
 import UserNotifications
+import os.log
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    private let logger = OSLog(subsystem: "pt.sousavf.Safe-Whisper", category: "AppDelegate")
 
     // MARK: - UIApplicationDelegate Methods
 
@@ -15,19 +17,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         UNUserNotificationCenter.current().delegate = self
 
         // Request push notification permissions and register for remote notifications
+        // Note: requestAuthorization() already calls registerForRemoteNotifications() if user grants permission
         Task {
             print("[DEBUG] AppDelegate - Requesting authorization")
+            os_log("[APNs] Requesting notification authorization", log: self.logger, type: .info)
             let authorized = await PushNotificationService.shared.requestAuthorization()
             print("[DEBUG] AppDelegate - Authorization result: \(authorized)")
-
-            // Add a small delay before requesting remote notifications
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-
-            print("[DEBUG] AppDelegate - Requesting remote notifications")
-            await MainActor.run {
-                UIApplication.shared.registerForRemoteNotifications()
-                print("[DEBUG] AppDelegate - registerForRemoteNotifications() called")
-            }
+            os_log("[APNs] Authorization result: %{public}@", log: self.logger, type: .info, authorized ? "GRANTED" : "DENIED")
         }
 
         return true
@@ -39,14 +35,20 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        print("[DEBUG] AppDelegate - Registered for remote notifications, token: \(token.prefix(16))...")
+        let tokenPrefix = String(token.prefix(16))
+        os_log("[APNs] Registered for remote notifications, token: %@...", log: self.logger, type: .info, tokenPrefix)
+        os_log("[APNs] Token length: %d", log: self.logger, type: .debug, token.count)
+        print("[DEBUG] AppDelegate - Registered for remote notifications, token: \(tokenPrefix)...")
         print("[DEBUG] AppDelegate - Token length: \(token.count)")
 
         // Register the token with our backend
+        os_log("[APNs] About to register token with backend", log: self.logger, type: .info)
         print("[DEBUG] AppDelegate - About to register token with backend")
         Task {
+            os_log("[APNs] Inside Task, calling registerToken", log: self.logger, type: .debug)
             print("[DEBUG] AppDelegate - Inside Task, calling registerToken")
             await PushNotificationService.shared.registerToken(token)
+            os_log("[APNs] registerToken completed", log: self.logger, type: .info)
             print("[DEBUG] AppDelegate - registerToken completed")
         }
     }
