@@ -3,10 +3,12 @@ package pt.sousavf.securemessaging.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
 @Table(name = "conversations", indexes = {
     @Index(name = "idx_conversation_initiator", columnList = "initiator_user_id"),
