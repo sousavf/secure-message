@@ -2,6 +2,7 @@ package pt.sousavf.securemessaging.controller;
 
 import pt.sousavf.securemessaging.dto.CreateMessageRequest;
 import pt.sousavf.securemessaging.dto.MessageResponse;
+import pt.sousavf.securemessaging.dto.MessagePageResponse;
 import pt.sousavf.securemessaging.service.MessageService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -114,15 +115,52 @@ public class MessageController {
     }
 
     /**
-     * Get all messages in a conversation, optionally filtered by creation time
+     * Get all messages in a conversation, optionally filtered by creation time or using pagination
+     *
+     * Query Parameters:
+     * - since: ISO-8601 timestamp for incremental updates (polling)
+     * - limit: Number of messages to return (default 50, max 100). If provided, enables pagination
+     * - cursor: ISO-8601 timestamp for cursor-based pagination (fetch older messages)
      */
     @GetMapping("/api/conversations/{conversationId}/messages")
     public ResponseEntity<?> getConversationMessages(
             @PathVariable UUID conversationId,
-            @RequestParam(required = false) String since) {
+            @RequestParam(required = false) String since,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String cursor) {
         try {
-            logger.info("Received request to retrieve messages from conversation: {} since: {}", conversationId, since);
+            logger.info("Received request to retrieve messages from conversation: {} since: {} limit: {} cursor: {}",
+                conversationId, since, limit, cursor);
 
+            // Default limit
+            int pageLimit = limit != null ? Math.min(limit, 100) : 50; // Max 100 per request
+
+            // If pagination is requested
+            if (limit != null) {
+                MessagePageResponse pageResponse;
+
+                if (cursor != null && !cursor.isEmpty()) {
+                    // Load older messages using cursor
+                    try {
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+                        LocalDateTime cursorTime = LocalDateTime.parse(cursor, formatter);
+                        pageResponse = messageService.getConversationMessagesPaginated(conversationId, cursorTime, pageLimit);
+                        logger.info("Retrieved {} messages with cursor pagination", pageResponse.getMessages().size());
+                    } catch (Exception e) {
+                        logger.warn("Invalid cursor format: {} - error: {}", cursor, e.getMessage());
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new ErrorMessage("Invalid cursor parameter. Use ISO-8601 format: 2025-11-19T18:30:00"));
+                    }
+                } else {
+                    // Initial page load
+                    pageResponse = messageService.getConversationMessagesFirstPage(conversationId, pageLimit);
+                    logger.info("Retrieved {} messages for first page", pageResponse.getMessages().size());
+                }
+
+                return ResponseEntity.ok(pageResponse);
+            }
+
+            // Non-paginated requests (backward compatibility)
             List<MessageResponse> messages;
 
             // If 'since' parameter is provided, fetch only messages created after that time
@@ -139,7 +177,7 @@ public class MessageController {
                         .body(new ErrorMessage("Invalid 'since' parameter. Use ISO-8601 format: 2025-11-19T18:30:00"));
                 }
             } else {
-                // If no 'since' parameter, fetch all messages
+                // If no 'since' parameter, fetch all messages (use with caution on large conversations)
                 messages = messageService.getConversationMessages(conversationId);
                 logger.info("Retrieved {} total messages", messages.size());
             }

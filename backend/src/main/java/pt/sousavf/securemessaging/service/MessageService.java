@@ -2,6 +2,7 @@ package pt.sousavf.securemessaging.service;
 
 import pt.sousavf.securemessaging.dto.CreateMessageRequest;
 import pt.sousavf.securemessaging.dto.MessageResponse;
+import pt.sousavf.securemessaging.dto.MessagePageResponse;
 import pt.sousavf.securemessaging.dto.StatsResponse;
 import pt.sousavf.securemessaging.entity.Conversation;
 import pt.sousavf.securemessaging.entity.Message;
@@ -22,6 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @Transactional
@@ -348,6 +351,84 @@ public class MessageService {
 
         logger.info("Conversation message retrieved and marked as consumed: {}", messageId);
         return Optional.of(MessageResponse.fromMessage(message));
+    }
+
+    /**
+     * Get paginated messages for a conversation (initial load)
+     * Returns the most recent messages first, up to the specified limit
+     */
+    public MessagePageResponse getConversationMessagesFirstPage(UUID conversationId, int limit) {
+        logger.info("Retrieving first page of messages for conversation: {} with limit: {}", conversationId, limit);
+
+        // Validate conversation exists and is active
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+
+        if (!conversation.isActive()) {
+            throw new IllegalStateException("Conversation is no longer active");
+        }
+
+        Pageable pageable = PageRequest.of(0, limit + 1); // Fetch one extra to determine hasMore
+        List<Message> messages = messageRepository.findActiveByConversationIdDescending(conversationId, pageable);
+
+        boolean hasMore = messages.size() > limit;
+        if (hasMore) {
+            messages = messages.subList(0, limit);
+        }
+
+        List<MessageResponse> responses = messages.stream()
+            .map(MessageResponse::fromMessage)
+            .collect(Collectors.toList());
+
+        LocalDateTime nextCursor = null;
+        if (hasMore && !messages.isEmpty()) {
+            nextCursor = messages.get(messages.size() - 1).getCreatedAt();
+        }
+
+        logger.info("Retrieved {} messages for first page of conversation: {}, hasMore: {}",
+            messages.size(), conversationId, hasMore);
+
+        return new MessagePageResponse(responses, hasMore, nextCursor, limit);
+    }
+
+    /**
+     * Get paginated messages for a conversation using cursor-based pagination
+     * Used for loading older messages when scrolling
+     */
+    public MessagePageResponse getConversationMessagesPaginated(UUID conversationId, LocalDateTime cursor, int limit) {
+        logger.info("Retrieving paginated messages for conversation: {} with cursor: {} limit: {}",
+            conversationId, cursor, limit);
+
+        // Validate conversation exists and is active
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+
+        if (!conversation.isActive()) {
+            throw new IllegalStateException("Conversation is no longer active");
+        }
+
+        Pageable pageable = PageRequest.of(0, limit + 1); // Fetch one extra to determine hasMore
+        List<Message> messages = messageRepository.findActiveByConversationIdWithCursor(
+            conversationId, cursor, pageable);
+
+        boolean hasMore = messages.size() > limit;
+        if (hasMore) {
+            messages = messages.subList(0, limit);
+        }
+
+        List<MessageResponse> responses = messages.stream()
+            .map(MessageResponse::fromMessage)
+            .collect(Collectors.toList());
+
+        LocalDateTime nextCursor = null;
+        if (hasMore && !messages.isEmpty()) {
+            nextCursor = messages.get(messages.size() - 1).getCreatedAt();
+        }
+
+        logger.info("Retrieved {} messages for conversation: {} using cursor pagination, hasMore: {}",
+            messages.size(), conversationId, hasMore);
+
+        return new MessagePageResponse(responses, hasMore, nextCursor, limit);
     }
 
     /**

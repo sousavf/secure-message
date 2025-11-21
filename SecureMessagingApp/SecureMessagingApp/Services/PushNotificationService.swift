@@ -11,7 +11,13 @@ class PushNotificationService {
     private let tokenRefreshInterval: TimeInterval = 24 * 60 * 60  // 24 hours
     private let lastTokenRegistrationKey = "lastAPNsTokenRegistration"
     private let lastRegisteredTokenKey = "lastRegisteredAPNsToken"
+    private let lastKnownAppVersionKey = "lastKnownAppVersion"
     private let logger = OSLog(subsystem: "pt.sousavf.Safe-Whisper", category: "APNs")
+
+    // Get current app version from Info.plist
+    private var currentAppVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+    }
 
     // Notification name for when new messages arrive
     static let newMessageReceivedNotification = NSNotification.Name("newMessageReceived")
@@ -86,6 +92,16 @@ class PushNotificationService {
         os_log("[APNs] Device ID: %{private}@", log: self.logger, type: .debug, deviceId)
         print("[DEBUG] PushNotificationService - Device ID: \(deviceId)")
 
+        // Check for app version change - force re-registration on app update
+        let lastKnownVersion = defaults.string(forKey: lastKnownAppVersionKey)
+        if lastKnownVersion != currentAppVersion {
+            os_log("[APNs] App version changed from %@ to %@ - forcing re-registration", log: self.logger, type: .info, lastKnownVersion ?? "unknown", currentAppVersion)
+            print("[DEBUG] PushNotificationService - App version changed - forcing re-registration")
+            defaults.set(currentAppVersion, forKey: lastKnownAppVersionKey)
+            // Clear old registration data to force re-register
+            defaults.set(0, forKey: lastTokenRegistrationKey)
+        }
+
         // Check if token has been successfully registered before
         let lastToken = defaults.string(forKey: lastRegisteredTokenKey)
         let lastRegistrationTime = defaults.double(forKey: lastTokenRegistrationKey)
@@ -94,7 +110,7 @@ class PushNotificationService {
         os_log("[APNs] Last token was: %{private}@", log: self.logger, type: .debug, lastToken ?? "NONE")
         os_log("[APNs] Time since last registration: %f seconds", log: self.logger, type: .debug, timeSinceLastRegistration)
 
-        // Skip only if token is the same AND it was registered within the last 24 hours
+        // Skip only if token is the same AND it was registered within the last 24 hours AND app version hasn't changed
         if lastToken == apnsToken && timeSinceLastRegistration < tokenRefreshInterval {
             os_log("[APNs] Token unchanged and recently registered, skipping registration", log: self.logger, type: .debug)
             print("[DEBUG] PushNotificationService - Token unchanged and recently registered, skipping registration")

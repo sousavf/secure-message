@@ -2,6 +2,15 @@ server:
   port: 8687
   servlet:
     context-path: /
+  # Request timeout to prevent hanging requests
+  tomcat:
+    connection-timeout: 60000  # 60 seconds
+    # Max threads for request processing
+    threads:
+      max: 200          # Max request processing threads
+      min-spare: 10     # Min idle threads
+    # Keep-alive timeout
+    keep-alive-timeout: 60000  # 60 seconds
 
 spring:
   datasource:
@@ -9,6 +18,15 @@ spring:
     username: ${DB_USERNAME:privileged_user}
     password: ${DB_PASSWORD:privileged_password}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      # Connection Pool Settings
+      maximum-pool-size: 20  # Max connections in pool
+      minimum-idle: 5        # Min idle connections
+      idle-timeout: 600000   # 10 minutes - how long idle connections stay open
+      connection-timeout: 30000  # 30 seconds - max wait for a connection
+      max-lifetime: 1800000  # 30 minutes - max lifetime of a connection
+      auto-commit: true
+      connection-test-query: "SELECT 1"  # Keep-alive query
 
   jpa:
     hibernate:
@@ -19,6 +37,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        # Query timeout to prevent hanging queries (60 seconds)
+        jdbc:
+          fetch_size: 50  # Batch fetch size for pagination
+          batch_size: 20  # Batch insert/update size
+          use_scrollable_resultset: false
+        # Statement timeout (in seconds) - prevents long-running queries
+        generate_statistics: false
     
   jackson:
     default-property-inclusion: NON_NULL
@@ -52,10 +77,32 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,env,threaddump,heapdump
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: always  # Show full health details for monitoring
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    # Add custom tags to all metrics
+    tags:
+      application: ${spring.application.name:secure-messaging}
+      environment: ${app.environment:development}
+    # Enable JVM metrics
+    enable:
+      jvm: true
+      process: true
+      logback: true
+      tomcat: true
+  # Health check probes for Kubernetes/Docker
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
 
 logging:
   level:
@@ -78,6 +125,10 @@ app:
   message:
     default-ttl-hours: 24
     cleanup-interval-minutes: 60
+  database:
+    # Statement timeout for PostgreSQL (prevents queries from hanging indefinitely)
+    statement-timeout-seconds: 60  # 60 seconds
+    query-timeout-seconds: 30      # 30 seconds for API requests
   share:
     base-url: ${APP_SHARE_BASE_URL:https://privileged.stratholme.eu}
   subscription:

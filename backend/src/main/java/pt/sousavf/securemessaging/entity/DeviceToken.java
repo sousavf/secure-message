@@ -6,8 +6,14 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "device_tokens", indexes = {
-    @Index(name = "idx_device_id", columnList = "device_id"),
-    @Index(name = "idx_apns_token", columnList = "apns_token")
+    // For finding all tokens for a device (push notification delivery)
+    @Index(name = "idx_device_id_active", columnList = "device_id, active"),
+    // For finding token by APNs token (validation)
+    @Index(name = "idx_apns_token", columnList = "apns_token"),
+    // For cleanup of old inactive tokens
+    @Index(name = "idx_updated_at", columnList = "updated_at"),
+    // Simple lookups
+    @Index(name = "idx_device_id", columnList = "device_id")
 })
 public class DeviceToken {
 

@@ -11,10 +11,15 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "messages", indexes = {
-    @Index(name = "idx_message_expires_at", columnList = "expiresAt"),
-    @Index(name = "idx_message_consumed", columnList = "consumed"),
-    @Index(name = "idx_message_created_at", columnList = "createdAt"),
-    @Index(name = "idx_message_conversation_id", columnList = "conversation_id")
+    // Pagination queries: conversation + created_at for efficient cursor-based pagination
+    @Index(name = "idx_msg_conv_created", columnList = "conversation_id, created_at DESC"),
+    // Cleanup queries: expires_at for efficient TTL expiration detection
+    @Index(name = "idx_msg_expires_at", columnList = "expires_at"),
+    // Filtering: consumed status
+    @Index(name = "idx_msg_consumed", columnList = "consumed"),
+    // Sorting and filtering
+    @Index(name = "idx_msg_created_at", columnList = "createdAt"),
+    @Index(name = "idx_msg_conversation_id", columnList = "conversation_id")
 })
 public class Message {
 

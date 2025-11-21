@@ -53,6 +53,28 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     List<Message> findActiveByConversationId(@Param("conversationId") UUID conversationId);
 
     /**
+     * Find active messages in a conversation using cursor-based pagination (descending order)
+     * Cursor is the createdAt timestamp of the last message from previous page
+     * Returns newest messages first (for loading older messages when scrolling)
+     */
+    @Query("SELECT m FROM Message m WHERE m.conversationId = :conversationId AND m.expiresAt > CURRENT_TIMESTAMP " +
+           "AND m.createdAt < :cursor ORDER BY m.createdAt DESC")
+    List<Message> findActiveByConversationIdWithCursor(
+            @Param("conversationId") UUID conversationId,
+            @Param("cursor") LocalDateTime cursor,
+            org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * Find active messages in a conversation using cursor-based pagination (ascending order, for initial load)
+     * Returns oldest messages first
+     */
+    @Query("SELECT m FROM Message m WHERE m.conversationId = :conversationId AND m.expiresAt > CURRENT_TIMESTAMP " +
+           "ORDER BY m.createdAt DESC")
+    List<Message> findActiveByConversationIdDescending(
+            @Param("conversationId") UUID conversationId,
+            org.springframework.data.domain.Pageable pageable);
+
+    /**
      * Find active messages in a conversation created after a specific timestamp (for polling)
      */
     @Query("SELECT m FROM Message m WHERE m.conversationId = :conversationId AND m.expiresAt > CURRENT_TIMESTAMP AND m.createdAt > :since ORDER BY m.createdAt ASC")
