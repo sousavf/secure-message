@@ -36,18 +36,21 @@ struct ConversationListView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color(.systemBackground))
                     } else {
-                        List {
-                            ForEach(conversations) { conversation in
-                                NavigationLink(destination: ConversationDetailView(conversation: conversation, deviceId: deviceId, onUpdate: {
-                                    Task {
-                                        await loadConversations()
+                        ScrollView {
+                            LazyVStack(spacing: 1) {
+                                ForEach(conversations) { conversation in
+                                    NavigationLink(destination: ConversationDetailView(conversation: conversation, deviceId: deviceId, onUpdate: {
+                                        Task {
+                                            await loadConversations()
+                                        }
+                                    })) {
+                                        ConversationRowView(conversation: conversation, onEditName: {
+                                            openNameEditor(for: conversation)
+                                        })
+                                        .background(Color(.systemBackground))
                                     }
-                                })) {
-                                    ConversationRowView(conversation: conversation, onEditName: {
-                                        openNameEditor(for: conversation)
-                                    })
-                                    .swipeActions(edge: .trailing) {
-                                        Button(role: .destructive) {
+                                    .contextMenu {
+                                        Button(role: conversation.isCreatedByCurrentDevice ? .destructive : nil) {
                                             Task {
                                                 if conversation.isCreatedByCurrentDevice {
                                                     await deleteConversation(conversation.id)
@@ -62,7 +65,16 @@ struct ConversationListView: View {
                                                 Label("Leave", systemImage: "person.slash.fill")
                                             }
                                         }
+
+                                        Button {
+                                            openNameEditor(for: conversation)
+                                        } label: {
+                                            Label("Edit Name", systemImage: "pencil")
+                                        }
                                     }
+
+                                    Divider()
+                                        .padding(.leading, 68)
                                 }
                             }
                         }
@@ -360,45 +372,117 @@ struct ConversationRowView: View {
     var onEditName: () -> Void = {}
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    let displayName = conversation.localName ?? "Private Conversation"
-                    HStack(spacing: 8) {
-                        Text(displayName)
-                            .font(.headline)
-                            .fontWeight(.semibold)
+        HStack(spacing: 12) {
+            // Avatar with initials
+            ZStack {
+                Circle()
+                    .fill(avatarColor)
 
-                        Button(action: onEditName) {
-                            Image(systemName: "pencil")
-                                .font(.caption)
-                                .foregroundColor(.indigo)
-                        }
-                    }
-                    Text("Created \(conversation.createdAt.formatted(date: .abbreviated, time: .shortened))")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    if conversation.isExpired {
-                        Text("Expired")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.red)
-                    } else {
-                        Text(conversation.timeRemaining)
-                            .font(.caption)
-                            .fontWeight(.semibold)
+                Text(avatarInitials)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            .frame(width: 56, height: 56)
+
+            // Main content
+            VStack(alignment: .leading, spacing: 6) {
+                // Title row with name and edit button
+                HStack(spacing: 8) {
+                    let displayName = conversation.localName ?? "Private Conversation"
+                    Text(displayName)
+                        .font(.system(size: 16, weight: .semibold))
+                        .lineLimit(1)
+
+                    Button(action: onEditName) {
+                        Image(systemName: "pencil.circle")
+                            .font(.system(size: 14))
                             .foregroundColor(.indigo)
+                            .opacity(0.6)
                     }
-                    Text("Expires \(conversation.expiresAt.formatted(date: .abbreviated, time: .shortened))")
-                        .font(.caption2)
+
+                    Spacer()
+                }
+
+                // Subtitle with status and time
+                HStack(spacing: 8) {
+                    if conversation.isExpired {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .font(.system(size: 12))
+                            Text("Expired")
+                                .font(.system(size: 13, weight: .medium))
+                        }
+                        .foregroundColor(.red)
+                    } else {
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock.fill")
+                                .font(.system(size: 12))
+                            Text(conversation.timeRemaining)
+                                .font(.system(size: 13, weight: .medium))
+                        }
+                        .foregroundColor(.indigo)
+                    }
+
+                    Spacer()
+
+                    // Time badge
+                    Text(formatTime(conversation.createdAt))
+                        .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.gray)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    private var avatarInitials: String {
+        let displayName = conversation.localName ?? "Private Conversation"
+        let components = displayName.split(separator: " ")
+
+        if components.count >= 2 {
+            let first = components[0].prefix(1).uppercased()
+            let second = components[1].prefix(1).uppercased()
+            return first + second
+        } else {
+            return displayName.prefix(2).uppercased()
+        }
+    }
+
+    private var avatarColor: Color {
+        let displayName = conversation.localName ?? "Private Conversation"
+        let colors: [Color] = [
+            .blue,
+            Color(red: 0.4, green: 0.2, blue: 0.8), // Indigo/Purple
+            Color(red: 0.2, green: 0.6, blue: 0.8), // Cyan
+            Color(red: 0.8, green: 0.2, blue: 0.4), // Pink
+            Color(red: 0.2, green: 0.8, blue: 0.4), // Green
+            Color(red: 0.8, green: 0.6, blue: 0.2), // Orange
+        ]
+
+        let hash = displayName.hashValue
+        let index = abs(hash) % colors.count
+        return colors[index]
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let now = Date()
+        let calendar = Calendar.current
+
+        if calendar.isDateInToday(date) {
+            return date.formatted(date: .omitted, time: .shortened)
+        } else if calendar.isDateInYesterday(date) {
+            return "Yesterday"
+        } else {
+            let components = calendar.dateComponents([.day], from: date, to: now)
+            if let days = components.day, days < 7 {
+                return "\(days)d ago"
+            } else {
+                return date.formatted(date: .abbreviated, time: .omitted)
+            }
+        }
     }
 }
 

@@ -74,12 +74,27 @@ public class MessageController {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleInvalidUUID(IllegalArgumentException e) {
-        logger.warn("Invalid UUID provided: {}", e.getMessage());
-        return ResponseEntity.badRequest().body("Invalid message ID format");
+        String message = e.getMessage();
+
+        // Suppress logging for common non-API requests (favicons, health checks, etc.)
+        if (!message.contains("apple-touch-icon") && !message.contains("favicon") &&
+            !message.contains(".png") && !message.contains(".ico")) {
+            logger.warn("Invalid UUID provided: {}", message);
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid message ID format");
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGeneralException(Exception e) {
+        // Don't log favicon/icon requests with full stack trace
+        if (e.getMessage() != null && (e.getMessage().contains("apple-touch-icon") ||
+            e.getMessage().contains("favicon") || e.getMessage().contains(".png") ||
+            e.getMessage().contains(".ico"))) {
+            // Silently return 404 for these requests
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
         logger.error("Unexpected error in MessageController", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                            .body("An unexpected error occurred");
