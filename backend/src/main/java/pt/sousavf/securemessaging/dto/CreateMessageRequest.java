@@ -2,6 +2,7 @@ package pt.sousavf.securemessaging.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import pt.sousavf.securemessaging.entity.Message;
 
 public class CreateMessageRequest {
 
@@ -15,6 +16,8 @@ public class CreateMessageRequest {
 
     @Size(max = 255, message = "Tag too large")
     private String tag;
+
+    private Message.MessageType messageType = Message.MessageType.TEXT;
 
     public CreateMessageRequest() {}
 
@@ -46,5 +49,13 @@ public class CreateMessageRequest {
 
     public void setTag(String tag) {
         this.tag = tag;
+    }
+
+    public Message.MessageType getMessageType() {
+        return messageType;
+    }
+
+    public void setMessageType(Message.MessageType messageType) {
+        this.messageType = messageType;
     }
 }

@@ -737,6 +737,98 @@ class APIService: ObservableObject {
         }
     }
 
+    func addConversationMessageWithType(conversationId: UUID, encryptedMessage: EncryptedMessage, deviceId: String? = nil, messageType: MessageType = .text) async throws -> ConversationMessage {
+        print("[DEBUG] addConversationMessageWithType - Creating request with encrypted message, type: \(messageType)")
+        var request = CreateMessageRequest(
+            ciphertext: encryptedMessage.ciphertext,
+            nonce: encryptedMessage.nonce,
+            tag: encryptedMessage.tag
+        )
+        request.messageType = messageType
+
+        var urlRequest = try createRequest(for: "/api/conversations/\(conversationId.uuidString)/messages", method: "POST")
+        addDeviceIdHeader(to: &urlRequest, deviceId: deviceId)
+
+        do {
+            urlRequest.httpBody = try JSONEncoder().encode(request)
+            print("[DEBUG] addConversationMessageWithType - Request body encoded successfully")
+            print("[DEBUG] addConversationMessageWithType - Request URL: \(urlRequest.url?.absoluteString ?? "unknown")")
+        } catch {
+            print("[ERROR] addConversationMessageWithType - Failed to encode request: \(error)")
+            throw error
+        }
+
+        let (data, response): (Data, URLResponse)
+        do {
+            print("[DEBUG] addConversationMessageWithType - Making HTTP request...")
+            (data, response) = try await session.data(for: urlRequest)
+            print("[DEBUG] addConversationMessageWithType - HTTP request completed successfully")
+        } catch {
+            print("[ERROR] addConversationMessageWithType - URLSession error: \(error)")
+            throw error
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            print("[ERROR] addConversationMessageWithType - Invalid response type")
+            throw NetworkError.unknownError
+        }
+
+        print("[DEBUG] addConversationMessageWithType - HTTP Status Code: \(httpResponse.statusCode)")
+
+        switch httpResponse.statusCode {
+        case 200, 201:
+            do {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .custom { decoder in
+                    let container = try decoder.singleValueContainer()
+                    let dateString = try container.decode(String.self)
+
+                    let formatters = [
+                        "yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
+                        "yyyy-MM-dd'T'HH:mm:ss.SSS",
+                        "yyyy-MM-dd'T'HH:mm:ss",
+                        "yyyy-MM-dd HH:mm:ss",
+                        "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                    ]
+
+                    for format in formatters {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = format
+                        formatter.locale = Locale(identifier: "en_US_POSIX")
+                        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                        if let date = formatter.date(from: dateString) {
+                            return date
+                        }
+                    }
+
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(dateString)")
+                }
+                let message = try decoder.decode(ConversationMessage.self, from: data)
+                print("[DEBUG] addConversationMessageWithType - Successfully decoded message: \(message.id)")
+                return message
+            } catch {
+                print("[ERROR] addConversationMessageWithType - Failed to decode response: \(error)")
+                throw error
+            }
+        case 404:
+            print("[ERROR] addConversationMessageWithType - Conversation not found")
+            throw NetworkError.conversationNotFound
+        case 413:
+            print("[ERROR] addConversationMessageWithType - Message too large")
+            let errorMessage = httpResponse.value(forHTTPHeaderField: "X-Error-Message") ?? "Message too large."
+            throw NetworkError.messageTooLarge(errorMessage)
+        case 400...499:
+            print("[ERROR] addConversationMessageWithType - Client error: \(httpResponse.statusCode)")
+            throw NetworkError.serverError(httpResponse.statusCode)
+        case 500...599:
+            print("[ERROR] addConversationMessageWithType - Server error: \(httpResponse.statusCode)")
+            throw NetworkError.serverError(httpResponse.statusCode)
+        default:
+            print("[ERROR] addConversationMessageWithType - Unknown status code: \(httpResponse.statusCode)")
+            throw NetworkError.unknownError
+        }
+    }
+
     // MARK: - Subscription Methods
     
     func verifySubscription(deviceId: String, receiptData: String) async {

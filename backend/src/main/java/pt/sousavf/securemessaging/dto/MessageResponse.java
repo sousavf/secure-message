@@ -18,6 +18,7 @@ public class MessageResponse {
     private LocalDateTime readAt;
     private boolean consumed;
     private String senderDeviceId;
+    private Message.MessageType messageType = Message.MessageType.TEXT;
 
     public MessageResponse() {}
 
@@ -31,6 +32,7 @@ public class MessageResponse {
         this.readAt = message.getReadAt();
         this.consumed = message.isConsumed();
         this.senderDeviceId = message.getSenderDeviceId();
+        this.messageType = message.getMessageType();
     }
 
     public static MessageResponse fromMessage(Message message) {
@@ -113,5 +115,13 @@ public class MessageResponse {
 
     public void setSenderDeviceId(String senderDeviceId) {
         this.senderDeviceId = senderDeviceId;
+    }
+
+    public Message.MessageType getMessageType() {
+        return messageType;
+    }
+
+    public void setMessageType(Message.MessageType messageType) {
+        this.messageType = messageType;
     }
 }

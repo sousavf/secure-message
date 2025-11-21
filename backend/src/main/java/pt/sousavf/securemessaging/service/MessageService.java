@@ -80,11 +80,16 @@ public class MessageService {
             request.getTag(),
             expiresAt
         );
-        
+
         if (senderDeviceId != null) {
             message.setSenderDeviceId(senderDeviceId);
         }
-        
+
+        // Set message type from request (defaults to TEXT if not specified)
+        if (request.getMessageType() != null) {
+            message.setMessageType(request.getMessageType());
+        }
+
         Message savedMessage = messageRepository.save(message);
         logger.info("Message created with ID: {}, size: {} bytes", savedMessage.getId(), estimateMessageSize(request));
         

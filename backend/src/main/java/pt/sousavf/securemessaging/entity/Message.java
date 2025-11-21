@@ -25,6 +25,12 @@ import java.util.UUID;
 })
 public class Message {
 
+    public enum MessageType {
+        TEXT,
+        STICKER,
+        IMAGE
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
@@ -63,6 +69,10 @@ public class Message {
 
     @Column(name = "conversation_id")
     private UUID conversationId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "message_type", nullable = false)
+    private MessageType messageType = MessageType.TEXT;
 
     public Message() {}
 
@@ -160,5 +170,13 @@ public class Message {
 
     public void setConversationId(UUID conversationId) {
         this.conversationId = conversationId;
+    }
+
+    public MessageType getMessageType() {
+        return messageType;
+    }
+
+    public void setMessageType(MessageType messageType) {
+        this.messageType = messageType;
     }
 }
