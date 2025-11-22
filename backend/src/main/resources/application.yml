@@ -48,7 +48,7 @@ spring:
   jackson:
     default-property-inclusion: NON_NULL
 
-  redis:
+  data.redis:
     host: ${REDIS_HOST:localhost}
     port: ${REDIS_PORT:6379}
     timeout: 2000ms

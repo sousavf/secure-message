@@ -1,5 +1,5 @@
-# Use OpenJDK 17 as base image
-FROM openjdk:17-jdk-slim
+# Use Eclipse Temurin 17 as base image
+FROM eclipse-temurin:17-jdk-jammy
 
 # Set working directory
 WORKDIR /app
@@ -22,7 +22,7 @@ COPY src ./src
 RUN ./mvnw clean package -DskipTests
 
 # Create final runtime image
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-jammy
 
 # Install curl for health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*

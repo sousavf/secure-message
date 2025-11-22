@@ -1,16 +1,17 @@
 #!/bin/bash
 
-# Build Multi-Platform Safe Whisper Backend for Docker Hub
+# Build Multi-Platform Safe Whisper Backend for Custom Registry
 # Supports both ARM64 (Apple Silicon) and AMD64 (Intel/AMD) architectures
-# Usage: ./build-multiplatform.sh [version] [dockerhub-username]
+# Usage: ./build-multiplatform-custom-registry.sh [version] [registry-url] [image-path]
+# Example: ./build-multiplatform-custom-registry.sh 2.0-build9 registry.vascosousa.com admin/safe-whisper-backend
 
 set -e  # Exit on any error
 
 # Configuration
 VERSION=${1:-"latest"}
-DOCKERHUB_USERNAME=${2:-"admin"}
-IMAGE_NAME="safe-whisper-backend"
-FULL_IMAGE_TAG="${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${VERSION}"
+REGISTRY_URL=${2:-"registry.vascosousa.com"}
+IMAGE_PATH=${3:-"admin/safe-whisper-backend"}
+FULL_IMAGE_TAG="${REGISTRY_URL}/${IMAGE_PATH}:${VERSION}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -45,14 +46,14 @@ fi
 print_status "Starting multi-platform build process..."
 print_status "Image: ${FULL_IMAGE_TAG}"
 print_status "Platforms: linux/amd64, linux/arm64"
-print_status "This will create a PRIVATE repository on Docker Hub"
 
-# Check if user is logged in to Docker Hub
+# Check if user is logged in to the registry
+print_status "Checking registry authentication..."
 if ! docker info | grep -q "Username"; then
-    print_warning "You need to log in to Docker Hub first."
-    echo "Please run: docker login"
-    echo "Enter your Docker Hub credentials when prompted."
-    docker login registry.vascosousa.com
+    print_warning "You need to log in to your registry first."
+    echo "Please run: docker login ${REGISTRY_URL}"
+    echo "Enter your registry credentials when prompted."
+    docker login ${REGISTRY_URL}
 fi
 
 # Navigate to the backend directory
@@ -76,14 +77,11 @@ if ! docker buildx version >/dev/null 2>&1; then
 fi
 
 # Create a new builder instance for multi-platform builds
-BUILDER_NAME="safe-whisper-builder"
+BUILDER_NAME="safe-whisper-builder-${RANDOM}"
 print_status "Setting up multi-platform builder..."
 
-# Remove existing builder if it exists (ignore errors)
-docker buildx rm ${BUILDER_NAME} >/dev/null 2>&1 || true
-
-# Create new builder
-docker buildx create --name ${BUILDER_NAME} --driver docker-container --use
+# Create new builder (don't remove, just create/use)
+docker buildx create --name ${BUILDER_NAME} --driver docker-container --use || docker buildx use ${BUILDER_NAME}
 
 # Bootstrap the builder
 print_status "Bootstrapping builder (this may take a moment)..."
@@ -96,18 +94,22 @@ print_status "This may take several minutes as it builds for both architectures.
 docker buildx build \
     --platform linux/amd64,linux/arm64 \
     --tag "${FULL_IMAGE_TAG}" \
-    --tag "${DOCKERHUB_USERNAME}/${IMAGE_NAME}:latest" \
     --push \
     .
 
-print_success "Multi-platform image built and pushed successfully!"
+if [ $? -eq 0 ]; then
+    print_success "Multi-platform image built and pushed successfully!"
+else
+    print_error "Build or push failed. Please check the error above."
+    exit 1
+fi
 
 # Clean up builder
 print_status "Cleaning up builder..."
-docker buildx rm ${BUILDER_NAME}
+docker buildx rm ${BUILDER_NAME} || true
 
 # Switch back to default builder
-docker buildx use default
+docker buildx use default || true
 
 print_success "🎉 Multi-platform deployment completed successfully!"
 echo ""
@@ -117,10 +119,5 @@ print_status "  🏗️  Platforms: linux/amd64, linux/arm64"
 echo ""
 print_status "You can verify the platforms with:"
 print_status "  docker buildx imagetools inspect ${FULL_IMAGE_TAG}"
-echo ""
-print_status "To make the repository private on Docker Hub:"
-print_status "  1. Go to https://hub.docker.com/repository/docker/${DOCKERHUB_USERNAME}/${IMAGE_NAME}"
-print_status "  2. Click 'Settings' tab"
-print_status "  3. Change visibility to 'Private'"
 echo ""
 print_success "Your image now works on both Apple Silicon Macs and Intel/AMD servers! 🚀"

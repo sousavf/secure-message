@@ -2,12 +2,12 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: safe-whisper-redis-prod
+    container_name: safe-whisper-v2-redis-prod
     command: redis-server --appendonly yes --maxmemory ${REDIS_MAX_MEMORY:-512mb} --maxmemory-policy allkeys-lru
     volumes:
       - redis_prod_data:/data
     networks:
-      - safe-whisper-network
+      - safe-whisper-v2-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -19,15 +19,15 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: safe-whisper-db-prod
+    container_name: safe-whisper-v2-db-prod
     environment:
-      POSTGRES_DB: ${DB_NAME:-safe_whisper}
-      POSTGRES_USER: ${DB_USER:-safe_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-$(openssl rand -base64 32)}
+      POSTGRES_DB: safe_whisper
+      POSTGRES_USER: safe_user
+      POSTGRES_PASSWORD: safe_password
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
     networks:
-      - safe-whisper-network
+      - safe-whisper-v2-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-safe_user} -d ${DB_NAME:-safe_whisper}"]
       interval: 30s
@@ -38,17 +38,17 @@ services:
 
   # Backend Application (from Docker Hub)
   backend:
-    image: registry.vascosousa.com/admin/safe-whisper-backend:v1.2
-    container_name: safe-whisper-backend-prod
+    image: registry.vascosousa.com/admin/safe-whisper-backend:v2.0-build9
+    container_name: safe-whisper-v2-backend-prod
     environment:
       # Database connection
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-safe_whisper}
-      DB_USERNAME: ${DB_USER:-safe_user}
-      DB_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/safe_whisper
+      DB_USERNAME: safe_user
+      DB_PASSWORD: safe_password
 
       # Redis connection
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
 
       # JPA/Hibernate settings
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -67,25 +67,28 @@ services:
       # Logging
       LOGGING_LEVEL_ROOT: WARN
       LOGGING_LEVEL_COM_EXAMPLE_SECUREMESSAGING: INFO
+      APNS_KEY_PATH: /app/certs/AuthKey.p8
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      - 8864:8080
     depends_on:
       redis:
         condition: service_healthy
       postgres:
         condition: service_healthy
     networks:
-      - safe-whisper-network
+      - safe-whisper-v2-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
+    volumes:
+      - /opt/safe-whisper/certs/AuthKey.p8:/app/certs/AuthKey.p8:ro
     restart: unless-stopped
 
 networks:
-  safe-whisper-network:
+  safe-whisper-v2-network:
     driver: bridge
 
 volumes:

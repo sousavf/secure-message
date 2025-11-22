@@ -1,53 +1,39 @@
-# Use OpenJDK 17 as base image
-FROM openjdk:17-jdk-slim
+# Build stage
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml for dependency caching
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
+RUN chmod +x ./mvnw && ./mvnw dependency:go-offline -B
 
-# Make Maven wrapper executable
-RUN chmod +x ./mvnw
-
-# Download dependencies (for better Docker layer caching)
-RUN ./mvnw dependency:go-offline -B
-
-# Copy source code
 COPY src ./src
+RUN ./mvnw clean package -DskipTests -X
 
-# Build the application
-RUN ./mvnw clean package -DskipTests
+# Extract JAR to exploded form for smaller final image
+RUN mkdir -p /app/target/extracted && \
+    cd /app/target/extracted && \
+    jar -xf ../*.jar
 
-# Create final runtime image
-FROM openjdk:17-jdk-slim
+# Final runtime image using minimal base
+FROM eclipse-temurin:17-jre-jammy
 
-# Install curl for health checks
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/* && \
+    groupadd -r appuser && useradd -r -g appuser appuser
 
-# Create non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-
-# Set working directory
 WORKDIR /app
 
-# Copy the JAR file from the build stage
-COPY --from=0 /app/target/secure-messaging-*.jar app.jar
+# Copy extracted JAR layers from builder
+COPY --from=builder --chown=appuser:appuser /app/target/extracted/BOOT-INF/lib ./lib
+COPY --from=builder --chown=appuser:appuser /app/target/extracted/BOOT-INF/classes ./
+COPY --from=builder --chown=appuser:appuser /app/target/extracted/META-INF ./META-INF
 
-# Change ownership to non-root user
-RUN chown appuser:appuser app.jar
-
-# Switch to non-root user
 USER appuser
-
-# Expose port 8080
 EXPOSE 8080
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-cp", ".:./lib/*", "pt.sousavf.securemessaging.SecureMessagingApplication"]
