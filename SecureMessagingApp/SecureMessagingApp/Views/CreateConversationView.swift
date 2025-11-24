@@ -7,12 +7,10 @@ struct CreateConversationView: View {
 
     @StateObject private var apiService = APIService.shared
     @State private var selectedTTLHours: Int = 24
-    @State private var customDays: String = "2"
     @State private var isCreating = false
     @State private var errorMessage: String?
 
-    let ttlOptions = [1, 6, 12, 24]  // 1h, 6h, 12h, 1 day
-    let unlimitedValue = 0  // 0 represents unlimited
+    let ttlOptions = [1, 6, 12, 24, 168, 720]  // 1h, 6h, 12h, 1 day, 7 days, 30 days
 
     var body: some View {
         NavigationStack {
@@ -60,43 +58,6 @@ struct CreateConversationView: View {
                                         .foregroundColor(selectedTTLHours == hours ? .white : .primary)
                                         .cornerRadius(8)
                                     }
-                                }
-
-                                // Custom days input field
-                                HStack(spacing: 0) {
-                                    TextField("2", text: $customDays)
-                                        .keyboardType(.numberPad)
-                                        .multilineTextAlignment(.center)
-                                        .fontWeight(.medium)
-                                        .onChange(of: customDays) { newValue in
-                                            let filtered = newValue.filter { $0.isNumber }
-                                            customDays = filtered
-                                            if let days = Int(filtered), days > 0 {
-                                                selectedTTLHours = days * 24
-                                            }
-                                        }
-
-                                    Text(" days")
-                                        .fontWeight(.medium)
-                                }
-                                .padding(12)
-                                .background(Int(customDays) == (selectedTTLHours / 24) && selectedTTLHours > 0 && selectedTTLHours != unlimitedValue ? Color.indigo : Color(.systemGray5))
-                                .foregroundColor(Int(customDays) == (selectedTTLHours / 24) && selectedTTLHours > 0 && selectedTTLHours != unlimitedValue ? .white : .primary)
-                                .cornerRadius(8)
-
-                                // Unlimited button
-                                Button(action: { selectedTTLHours = unlimitedValue }) {
-                                    HStack {
-                                        Spacer()
-                                        Text("Unlimited")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        Spacer()
-                                    }
-                                    .padding(12)
-                                    .background(selectedTTLHours == unlimitedValue ? Color.indigo : Color(.systemGray5))
-                                    .foregroundColor(selectedTTLHours == unlimitedValue ? .white : .primary)
-                                    .cornerRadius(8)
                                 }
                             }
                         }
