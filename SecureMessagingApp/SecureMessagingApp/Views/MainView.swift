@@ -51,8 +51,24 @@ struct MainView: View {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("HandleSecureMessageURL"))) { notification in
-            // Switch to Receive tab when Universal Link is handled
-            selectedTab = 1
+            // Parse the URL to determine the correct routing
+            if let url = notification.object as? URL {
+                let urlString = url.absoluteString
+
+                // Check if this is a conversation link (/join/{id}) or message link
+                if urlString.contains("/join/") {
+                    // This is a conversation join link - route to Conversations tab
+                    selectedTab = 0
+                    // Post a notification so ConversationListView can handle the join
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("HandleConversationDeepLink"),
+                        object: url
+                    )
+                } else {
+                    // This is a message link - route to Receive tab
+                    selectedTab = 2
+                }
+            }
         }
     }
 }

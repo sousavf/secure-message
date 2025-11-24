@@ -160,6 +160,13 @@ struct ConversationListView: View {
                     await loadConversations()
                 }.value
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("HandleConversationDeepLink"))) { notification in
+                // Handle conversation deep link (when user follows a shared link)
+                if let url = notification.object as? URL {
+                    print("[DEBUG] ConversationListView - Received conversation deep link: \(url.absoluteString)")
+                    handleQRCodeScanned(url.absoluteString)
+                }
+            }
         }
     }
 
