@@ -262,11 +262,15 @@ public class ConversationController {
     // Response DTOs
 
     public static class ConversationResponse {
-        private final String id;
-        private final String initiatorUserId;
-        private final String status;
-        private final String expiresAt;
-        private final String createdAt;
+        private String id;
+        private String initiatorUserId;
+        private String status;
+        private String expiresAt;
+        private String createdAt;
+
+        // No-arg constructor for Jackson deserialization
+        public ConversationResponse() {
+        }
 
         public ConversationResponse(String id, String initiatorUserId, String status, String expiresAt, String createdAt) {
             this.id = id;
@@ -308,8 +312,12 @@ public class ConversationController {
     }
 
     public static class AccessibilityResponse {
-        private final String conversationId;
-        private final boolean accessible;
+        private String conversationId;
+        private boolean accessible;
+
+        // No-arg constructor for Jackson deserialization
+        public AccessibilityResponse() {
+        }
 
         public AccessibilityResponse(String conversationId, boolean accessible) {
             this.conversationId = conversationId;
@@ -326,7 +334,11 @@ public class ConversationController {
     }
 
     public static class ErrorResponse {
-        private final String message;
+        private String message;
+
+        // No-arg constructor for Jackson deserialization
+        public ErrorResponse() {
+        }
 
         public ErrorResponse(String message) {
             this.message = message;

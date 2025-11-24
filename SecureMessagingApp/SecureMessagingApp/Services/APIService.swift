@@ -6,13 +6,16 @@ class APIService: ObservableObject {
     private let baseURL: String
     private let session: URLSession
     
-    init(baseURL: String = "https://privileged.stratholme.eu") {
+    init(baseURL: String = "https://development.stratholme.eu") {
         self.baseURL = baseURL
 
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
-        config.tlsMinimumSupportedProtocolVersion = .TLSv13
+        config.httpShouldSetCookies = false
+        config.httpCookieAcceptPolicy = .never
+        config.httpMaximumConnectionsPerHost = 1
+        config.urlCache = nil  // Disable caching
         self.session = URLSession(configuration: config)
     }
 

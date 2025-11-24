@@ -99,7 +99,7 @@ struct SettingsView: View {
                         VStack(spacing: 12) {
                             InfoRow(label: "Version", value: "1.0.0")
                             InfoRow(label: "Build", value: "1")
-                            InfoRow(label: "Server", value: "privileged.stratholme.eu")
+                            InfoRow(label: "Server", value: "development.stratholme.eu")
                         }
                     }
                     .padding(16)

@@ -155,7 +155,10 @@ struct ConversationListView: View {
                 }
             }
             .refreshable {
-                await loadConversations()
+                // Use a detached task to avoid cancellation issues with refreshable modifier
+                await Task.detached(priority: .userInitiated) {
+                    await loadConversations()
+                }.value
             }
         }
     }
@@ -234,7 +237,7 @@ struct ConversationListView: View {
         showQRScanner = false
 
         // Parse the conversation link to extract conversation ID and encryption key
-        // Expected format: https://privileged.stratholme.eu/join/4c80ec7f-996e-4249-9b9b-9377c6abcdf8#BASE64_ENCRYPTION_KEY
+        // Expected format: https://development.stratholme.eu/join/4c80ec7f-996e-4249-9b9b-9377c6abcdf8#BASE64_ENCRYPTION_KEY
         if let url = URL(string: code),
            let lastComponent = url.pathComponents.last,
            let conversationId = UUID(uuidString: lastComponent) {
