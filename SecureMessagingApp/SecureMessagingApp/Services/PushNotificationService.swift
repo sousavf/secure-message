@@ -125,7 +125,7 @@ class PushNotificationService {
             let request = RegisterDeviceTokenRequest(apnsToken: apnsToken)
 
             // Create request manually to add X-Device-ID header
-            let urlString = "https://development.stratholme.eu/api/devices/token"
+            let urlString = "https://privileged.stratholme.eu/api/devices/token"
             guard let url = URL(string: urlString) else {
                 os_log("[APNs] Invalid URL: %@", log: self.logger, type: .error, urlString)
                 print("[ERROR] PushNotificationService - Invalid URL: \(urlString)")

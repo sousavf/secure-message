@@ -26,7 +26,7 @@ struct SecureMessagingAppApp: App {
     func handleIncomingURL(_ url: URL) {
         print("App: Received URL: \(url.absoluteString)")
         
-        guard url.scheme == "https" && url.host == "development.stratholme.eu" else { 
+        guard url.scheme == "https" && url.host == "privileged.stratholme.eu" else { 
             print("App: URL scheme or host doesn't match")
             return 
         }

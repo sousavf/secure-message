@@ -6,7 +6,7 @@ class APIService: ObservableObject {
     private let baseURL: String
     private let session: URLSession
     
-    init(baseURL: String = "https://development.stratholme.eu") {
+    init(baseURL: String = "https://privileged.stratholme.eu") {
         self.baseURL = baseURL
 
         let config = URLSessionConfiguration.default

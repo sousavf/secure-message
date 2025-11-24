@@ -52,7 +52,7 @@ public class LinkRedirectController {
     public String handlePreviewLink(@PathVariable String messageId,
                                     @RequestHeader(value = "User-Agent", required = false) String userAgent,
                                     Model model) {
-        
+
         // Validate that messageId is a valid UUID format
         try {
             UUID.fromString(messageId);
@@ -60,13 +60,40 @@ public class LinkRedirectController {
             // If not a valid UUID, let Spring handle it normally (404)
             return "error/404";
         }
-        
+
         // Add model attributes for the error page
         model.addAttribute("messageId", messageId);
         model.addAttribute("linkType", "preview");
         model.addAttribute("isIOS", isIOSUserAgent(userAgent));
         model.addAttribute("isAndroid", isAndroidUserAgent(userAgent));
-        
+
+        return "browser-redirect";
+    }
+
+    /**
+     * Handle conversation links: /conversation/{conversationId}
+     * Shows app redirect page when accessed in browser
+     * Only handles requests that accept HTML (browsers), not API requests
+     */
+    @GetMapping(value = "/conversation/{conversationId}", produces = "text/html")
+    public String handleConversationLink(@PathVariable String conversationId,
+                                         @RequestHeader(value = "User-Agent", required = false) String userAgent,
+                                         Model model) {
+
+        // Validate that conversationId is a valid UUID format
+        try {
+            UUID.fromString(conversationId);
+        } catch (IllegalArgumentException e) {
+            // If not a valid UUID, let Spring handle it normally (404)
+            return "error/404";
+        }
+
+        // Add model attributes for the redirect page
+        model.addAttribute("conversationId", conversationId);
+        model.addAttribute("linkType", "conversation");
+        model.addAttribute("isIOS", isIOSUserAgent(userAgent));
+        model.addAttribute("isAndroid", isAndroidUserAgent(userAgent));
+
         return "browser-redirect";
     }
     

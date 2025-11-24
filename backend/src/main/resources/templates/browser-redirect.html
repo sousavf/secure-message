@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opening Safe Whisper...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px 30px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .status {
+            color: #667eea;
+            font-size: 13px;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-direction: column;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">💬</div>
+        <h1>Opening Safe Whisper</h1>
+        <p class="subtitle">Redirecting you to the app...</p>
+        <div class="status" id="status">Attempting to open app...</div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="openApp()">Open in App</button>
+            <button class="btn-secondary" onclick="openAppStore()">Get App from App Store</button>
+        </div>
+
+        <p class="info-text">
+            If the app doesn't open automatically, tap "Open in App" above.
+            <br><br>
+            Don't have Safe Whisper installed? Tap "Get App from App Store" to download it.
+        </p>
+    </div>
+
+    <script>
+        // Extract ID from URL path
+        const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
+        let id = null;
+        let linkType = 'message'; // default
+
+        // Check if this is a conversation link or message link
+        if (pathParts.includes('conversation')) {
+            const idx = pathParts.indexOf('conversation');
+            if (idx + 1 < pathParts.length) {
+                id = pathParts[idx + 1];
+                linkType = 'conversation';
+            }
+        } else {
+            // Direct message link - ID is the first part of path or last non-empty part
+            id = pathParts[0];
+            if (pathParts.includes('preview')) {
+                linkType = 'preview';
+            }
+        }
+
+        function openApp() {
+            if (!id) {
+                document.getElementById('status').textContent = 'Invalid link';
+                return;
+            }
+
+            // Construct the appropriate URL scheme based on link type
+            let iosScheme;
+            if (linkType === 'conversation') {
+                iosScheme = `securemsg://conversation/${id}`;
+            } else if (linkType === 'preview') {
+                iosScheme = `securemsg://message/${id}/preview`;
+            } else {
+                iosScheme = `securemsg://message/${id}`;
+            }
+
+            // Update status
+            document.getElementById('status').textContent = 'Opening Safe Whisper...';
+
+            // Try to open the app
+            window.location.href = iosScheme;
+
+            // If app is not installed, fallback to App Store after a delay
+            setTimeout(() => {
+                openAppStore();
+            }, 1500);
+        }
+
+        function openAppStore() {
+            // App Store link
+            const appStoreUrl = 'https://apps.apple.com/app/safe-whisper/id6740152345';
+            window.location.href = appStoreUrl;
+        }
+
+        // Auto-attempt to open app on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                openApp();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

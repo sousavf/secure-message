@@ -117,4 +117,51 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
         completionHandler()
     }
+
+    // MARK: - URL Scheme Handling
+
+    /// Handle deep links via custom URL scheme (securemsg://)
+    func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
+        print("[DEBUG] AppDelegate - Handling URL: \(url.absoluteString)")
+
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: true),
+              components.scheme == "securemsg" else {
+            print("[ERROR] AppDelegate - Invalid URL scheme")
+            return false
+        }
+
+        // Parse the URL path: securemsg://message/{id} or securemsg://conversation/{id}
+        let pathComponents = url.path.split(separator: "/").map(String.init)
+
+        if pathComponents.count >= 2 {
+            let type = pathComponents[0]  // "message" or "conversation"
+            let id = pathComponents[1]
+
+            print("[DEBUG] AppDelegate - Deep link type: \(type), id: \(id)")
+
+            if type == "message" {
+                // Handle message link
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("DeepLinkMessageReceived"),
+                    object: nil,
+                    userInfo: ["messageId": id]
+                )
+            } else if type == "conversation" {
+                // Handle conversation link
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("DeepLinkConversationReceived"),
+                    object: id
+                )
+            }
+
+            return true
+        }
+
+        print("[ERROR] AppDelegate - Invalid URL path format")
+        return false
+    }
 }

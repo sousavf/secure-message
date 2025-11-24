@@ -254,7 +254,7 @@ class ImageSaver: NSObject {
 
 #Preview {
     ConversationShareView(
-        shareLink: .constant("https://development.stratholme.eu/conversations/abc123/join?token=xyz789"),
+        shareLink: .constant("https://privileged.stratholme.eu/conversations/abc123/join?token=xyz789"),
         conversationId: UUID()
     )
 }

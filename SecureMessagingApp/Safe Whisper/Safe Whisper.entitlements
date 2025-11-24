@@ -6,7 +6,7 @@
 	<string>development</string>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:development.stratholme.eu</string>
+		<string>applinks:privileged.stratholme.eu</string>
 	</array>
 </dict>
 </plist>
