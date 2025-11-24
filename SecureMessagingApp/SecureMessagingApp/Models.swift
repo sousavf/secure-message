@@ -157,7 +157,7 @@ struct ConversationMessage: Identifiable, Codable {
     let expiresAt: Date?
     let readAt: Date?
     let senderDeviceId: String?  // Track who sent this message
-    let messageType: MessageType?
+    var messageType: MessageType?
 
     // Local storage for encryption key and decrypted content (not sent to/from backend)
     var encryptionKey: String? = nil

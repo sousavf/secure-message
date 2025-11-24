@@ -141,15 +141,15 @@
 		1A1A1A391A1A1A1A1A1A1A39 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				1A1A1A2D1A1A1A1A1A1A1A2D /* MainView.swift */,
 				1A1A1A2F1A1A1A1A1A1A1A2F /* ComposeView.swift */,
-				1A1A1A311A1A1A1A1A1A1A31 /* ReceiveView.swift */,
-				1A1A1A331A1A1A1A1A1A1A33 /* SettingsView.swift */,
 				E13C95A32ECCBD1200D77F31 /* ConversationDetailView.swift */,
 				E13C95A12ECCBD1200D77F31 /* ConversationListView.swift */,
 				E13C959F2ECCBD1200D77F31 /* ConversationShareView.swift */,
 				E13C95A22ECCBD1200D77F31 /* CreateConversationView.swift */,
+				1A1A1A2D1A1A1A1A1A1A1A2D /* MainView.swift */,
 				E13C95A02ECCBD1200D77F31 /* QRScannerView.swift */,
+				1A1A1A311A1A1A1A1A1A1A31 /* ReceiveView.swift */,
+				1A1A1A331A1A1A1A1A1A1A33 /* SettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";

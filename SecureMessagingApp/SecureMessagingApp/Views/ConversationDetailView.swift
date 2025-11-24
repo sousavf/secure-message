@@ -16,7 +16,6 @@ struct ConversationDetailView: View {
     @State private var showShareModal = false
     @State private var showNameEditor = false
     @State private var editingName: String = ""
-    @State private var showStickerPicker = false
     @FocusState private var messageFieldFocused: Bool
 
     // Push notification state
@@ -71,18 +70,6 @@ struct ConversationDetailView: View {
                     // Message Input
                     VStack(spacing: 12) {
                         HStack(spacing: 12) {
-                            // Sticker picker button
-                            Button(action: {
-                                showStickerPicker = true
-                                messageFieldFocused = false
-                            }) {
-                                Image(systemName: "smiley.fill")
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(.indigo)
-                            }
-                            .frame(width: 44, height: 44)
-                            .disabled(isSending || conversation.isExpired)
-
                             TextField("Type a message...", text: $messageText, axis: .vertical)
                                 .lineLimit(5)
                                 .focused($messageFieldFocused)
@@ -184,13 +171,6 @@ struct ConversationDetailView: View {
             }
             .sheet(isPresented: $showShareModal) {
                 ConversationShareView(shareLink: $shareLink, conversationId: conversation.id)
-            }
-            .sheet(isPresented: $showStickerPicker) {
-                StickerPickerView(isPresented: $showStickerPicker) { packId, stickerId in
-                    Task {
-                        await sendSticker(packId: packId, stickerId: stickerId)
-                    }
-                }
             }
             .onAppear {
                 Task {
@@ -305,67 +285,6 @@ struct ConversationDetailView: View {
     }
 
     @MainActor
-    private func sendSticker(packId: String, stickerId: String) async {
-        print("[DEBUG] sendSticker - Sending sticker: packId=\(packId), stickerId=\(stickerId)")
-
-        guard !conversation.isExpired else {
-            print("[DEBUG] sendSticker - Conversation is expired")
-            errorMessage = "This conversation has expired"
-            return
-        }
-
-        isSending = true
-        defer { isSending = false }
-
-        do {
-            // Create sticker metadata as the "plaintext" message
-            let stickerMetadata = "\(packId):\(stickerId)"
-
-            // Use conversation's master encryption key if available
-            let keyString: String
-            let key: SymmetricKey
-
-            if let conversationKey = conversation.encryptionKey {
-                print("[DEBUG] sendSticker - Using conversation's master encryption key")
-                keyString = conversationKey
-                key = try CryptoManager.keyFromBase64String(conversationKey)
-            } else {
-                print("[DEBUG] sendSticker - Generating new encryption key for conversation")
-                key = CryptoManager.generateKey()
-                keyString = CryptoManager.keyToBase64String(key)
-            }
-
-            print("[DEBUG] sendSticker - Encrypting sticker metadata")
-            let encryptedMessage = try CryptoManager.encrypt(message: stickerMetadata, key: key)
-
-            print("[DEBUG] sendSticker - Sending to backend, conversationId=\(conversation.id), deviceId=\(deviceId)")
-            var newMessage = try await apiService.addConversationMessageWithType(
-                conversationId: conversation.id,
-                encryptedMessage: encryptedMessage,
-                deviceId: deviceId,
-                messageType: .sticker
-            )
-
-            print("[DEBUG] sendSticker - Sticker sent successfully, id=\(newMessage.id)")
-
-            // Store the encryption key and metadata for rendering
-            newMessage.encryptionKey = keyString
-            newMessage.decryptedContent = stickerMetadata
-            newMessage.messageType = .sticker
-
-            messages.append(newMessage)
-
-            errorMessage = nil
-            onUpdate()
-        } catch let error as NetworkError {
-            print("[ERROR] sendSticker - NetworkError: \(error)")
-            errorMessage = error.localizedDescription
-        } catch {
-            print("[ERROR] sendSticker - Unexpected error: \(error)")
-            errorMessage = "Failed to send sticker: \(error)"
-        }
-    }
-
     private func generateShareLink() {
         print("[DEBUG] ConversationDetailView - generateShareLink called")
         Task {
@@ -563,43 +482,7 @@ struct ConversationMessageRow: View {
     private var messageBubble: some View {
         VStack(alignment: isSentByCurrentDevice ? .trailing : .leading, spacing: 4) {
             // Message content bubble
-            if message.messageType == .sticker {
-                // Sticker display
-                if let decryptedContent = decryptedText ?? message.decryptedContent {
-                    if let stickerEmoji = extractStickerEmoji(from: decryptedContent) {
-                        Text(stickerEmoji)
-                            .font(.system(size: 64))
-                            .padding(8)
-                    } else {
-                        Text("[Invalid sticker]")
-                            .padding(12)
-                            .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
-                            .cornerRadius(16)
-                            .italic()
-                    }
-                } else if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag {
-                    let keyToUse = message.encryptionKey ?? conversationEncryptionKey
-                    if let keyString = keyToUse, let decrypted = attemptDecryption(ciphertext: ciphertext, nonce: nonce, tag: tag, keyString: keyString) {
-                        if let stickerEmoji = extractStickerEmoji(from: decrypted) {
-                            Text(stickerEmoji)
-                                .font(.system(size: 64))
-                                .padding(8)
-                        } else {
-                            Text("[Invalid sticker]")
-                                .padding(12)
-                                .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
-                                .cornerRadius(16)
-                                .italic()
-                        }
-                    } else {
-                        Text("[Unable to decrypt sticker]")
-                            .padding(12)
-                            .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
-                            .cornerRadius(16)
-                            .italic()
-                    }
-                }
-            } else if let decryptedContent = decryptedText ?? message.decryptedContent {
+            if let decryptedContent = decryptedText ?? message.decryptedContent {
                 Text(decryptedContent)
                     .padding(12)
                     .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
@@ -677,24 +560,6 @@ struct ConversationMessageRow: View {
         }
     }
 
-    private func extractStickerEmoji(from stickerMetadata: String) -> String? {
-        // stickerMetadata format: "packId:stickerId"
-        let components = stickerMetadata.split(separator: ":")
-        guard components.count == 2 else {
-            print("[DEBUG] ConversationMessageRow - Invalid sticker metadata format: \(stickerMetadata)")
-            return nil
-        }
-
-        let packId = String(components[0])
-        let stickerId = String(components[1])
-
-        if let sticker = BuiltInStickerPacks.getSticker(packId: packId, stickerId: stickerId) {
-            return sticker.emoji
-        }
-
-        print("[DEBUG] ConversationMessageRow - Sticker not found: packId=\(packId), stickerId=\(stickerId)")
-        return nil
-    }
 }
 
 #Preview {
