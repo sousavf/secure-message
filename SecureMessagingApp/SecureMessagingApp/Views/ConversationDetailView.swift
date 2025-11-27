@@ -50,8 +50,11 @@ struct ConversationDetailView: View {
                                         .id(message.id)
                                         .listRowSeparator(.hidden)
                                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                                        .listRowBackground(Color.clear)
                                 }
                             }
+                            .scrollContentBackground(.hidden)
+                            .background(Color(.systemBackground))
                             .onChange(of: messages.count) { _ in
                                 if let lastMessage = messages.last {
                                     withAnimation {

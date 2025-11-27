@@ -1,4 +1,5 @@
 import SwiftUI
+import CryptoKit
 
 struct ConversationListView: View {
     @StateObject private var apiService = APIService.shared
@@ -167,6 +168,13 @@ struct ConversationListView: View {
                     handleQRCodeScanned(url.absoluteString)
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PushNotificationConversationTapped"))) { notification in
+                // Handle push notification tap (user tapped a notification)
+                if let conversationHash = notification.object as? String {
+                    print("[DEBUG] ConversationListView - User tapped notification for conversation hash: \(conversationHash)")
+                    handlePushNotificationTap(conversationHash: conversationHash)
+                }
+            }
         }
     }
 
@@ -313,6 +321,55 @@ struct ConversationListView: View {
             print("[ERROR] ConversationListView - Failed to parse QR code: \(code)")
             errorMessage = "Invalid QR code format"
         }
+    }
+
+    @MainActor
+    private func handlePushNotificationTap(conversationHash: String) {
+        print("[DEBUG] ConversationListView - Finding conversation for hash: \(conversationHash)")
+
+        // Find the conversation that matches this hash
+        for conversation in conversations {
+            let currentConversationHash = hashConversationId(conversation.id)
+            if currentConversationHash == conversationHash {
+                print("[DEBUG] ConversationListView - Found matching conversation: \(conversation.id)")
+                selectedConversation = conversation
+                return
+            }
+        }
+
+        print("[WARNING] ConversationListView - No conversation found matching hash: \(conversationHash)")
+        // Conversation not found in current list, try reloading conversations
+        Task {
+            print("[DEBUG] ConversationListView - Reloading conversations to find notification conversation")
+            await loadConversations()
+
+            // Try again after reload
+            for conversation in conversations {
+                let currentConversationHash = hashConversationId(conversation.id)
+                if currentConversationHash == conversationHash {
+                    print("[DEBUG] ConversationListView - Found matching conversation after reload: \(conversation.id)")
+                    await MainActor.run {
+                        selectedConversation = conversation
+                    }
+                    return
+                }
+            }
+
+            print("[ERROR] ConversationListView - Still couldn't find conversation for hash: \(conversationHash)")
+            await MainActor.run {
+                errorMessage = "Could not find conversation from notification"
+            }
+        }
+    }
+
+    /// Hash conversation ID to match backend implementation
+    /// Must use lowercase UUID string to match Java's UUID.toString() format
+    private func hashConversationId(_ id: UUID) -> String {
+        let lowercaseUUID = id.uuidString.lowercased()
+        let data = lowercaseUUID.data(using: .utf8)!
+        let hash = SHA256.hash(data: data)
+        let hashString = hash.compactMap { String(format: "%02x", $0) }.joined()
+        return String(hashString.prefix(32))
     }
 
     @MainActor

@@ -49,13 +49,18 @@ struct SecureMessagingAppApp: App {
         }
         
         print("App: Posting notification with URL: \(finalURL)")
-        
+
         // Add slight delay to ensure app is fully loaded
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            NotificationCenter.default.post(
-                name: NSNotification.Name("HandleSecureMessageURL"),
-                object: finalURL
-            )
+            if let url = URL(string: finalURL) {
+                print("App: Successfully created URL object, posting notification")
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("HandleSecureMessageURL"),
+                    object: url
+                )
+            } else {
+                print("App: Failed to create URL object from: \(finalURL)")
+            }
         }
     }
 }

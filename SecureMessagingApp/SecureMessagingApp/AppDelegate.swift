@@ -113,7 +113,20 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         print("[DEBUG] AppDelegate - User tapped on notification")
 
         let userInfo = response.notification.request.content.userInfo
+
+        // First, handle the silent push to refresh data
         PushNotificationService.shared.handleSilentPush(userInfo: userInfo)
+
+        // Then, route to the conversation if this is a conversation notification
+        if let conversationHash = userInfo["c"] as? String {
+            print("[DEBUG] AppDelegate - Notification is for conversation hash: \(conversationHash)")
+
+            // Post notification to route to the conversation
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PushNotificationConversationTapped"),
+                object: conversationHash
+            )
+        }
 
         completionHandler()
     }
