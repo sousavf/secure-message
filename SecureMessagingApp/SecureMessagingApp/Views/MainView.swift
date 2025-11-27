@@ -60,10 +60,13 @@ struct MainView: View {
                     // This is a conversation join link - route to Conversations tab
                     selectedTab = 0
                     // Post a notification so ConversationListView can handle the join
-                    NotificationCenter.default.post(
-                        name: NSNotification.Name("HandleConversationDeepLink"),
-                        object: url
-                    )
+                    // Use delay to ensure ConversationListView has initialized its listeners
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("HandleConversationDeepLink"),
+                            object: url
+                        )
+                    }
                 } else {
                     // This is a message link - route to Receive tab
                     selectedTab = 2
