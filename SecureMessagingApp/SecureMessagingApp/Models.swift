@@ -10,6 +10,7 @@ enum MessageType: String, Codable {
     case text = "TEXT"
     case sticker = "STICKER"
     case image = "IMAGE"
+    case file = "FILE"
 }
 
 struct CreateMessageRequest: Codable {
@@ -159,12 +160,20 @@ struct ConversationMessage: Identifiable, Codable {
     let senderDeviceId: String?  // Track who sent this message
     var messageType: MessageType?
 
+    // File metadata (only populated for file/image messages)
+    let fileName: String?
+    let fileSize: Int?
+    let fileMimeType: String?
+    let fileUrl: String?
+
     // Local storage for encryption key and decrypted content (not sent to/from backend)
     var encryptionKey: String? = nil
     var decryptedContent: String? = nil
+    var downloadedFileData: Data? = nil  // Decrypted file data cached locally
 
     enum CodingKeys: String, CodingKey {
         case id, ciphertext, nonce, tag, createdAt, consumed, conversationId, expiresAt, readAt, senderDeviceId, messageType
+        case fileName, fileSize, fileMimeType, fileUrl
     }
 
     init(from decoder: Decoder) throws {
@@ -180,6 +189,10 @@ struct ConversationMessage: Identifiable, Codable {
         readAt = try container.decodeIfPresent(Date.self, forKey: .readAt)
         senderDeviceId = try container.decodeIfPresent(String.self, forKey: .senderDeviceId)
         messageType = try container.decodeIfPresent(MessageType.self, forKey: .messageType)
+        fileName = try container.decodeIfPresent(String.self, forKey: .fileName)
+        fileSize = try container.decodeIfPresent(Int.self, forKey: .fileSize)
+        fileMimeType = try container.decodeIfPresent(String.self, forKey: .fileMimeType)
+        fileUrl = try container.decodeIfPresent(String.self, forKey: .fileUrl)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -195,6 +208,10 @@ struct ConversationMessage: Identifiable, Codable {
         try container.encodeIfPresent(readAt, forKey: .readAt)
         try container.encodeIfPresent(senderDeviceId, forKey: .senderDeviceId)
         try container.encodeIfPresent(messageType, forKey: .messageType)
+        try container.encodeIfPresent(fileName, forKey: .fileName)
+        try container.encodeIfPresent(fileSize, forKey: .fileSize)
+        try container.encodeIfPresent(fileMimeType, forKey: .fileMimeType)
+        try container.encodeIfPresent(fileUrl, forKey: .fileUrl)
     }
 
     // Check if message is expired

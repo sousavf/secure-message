@@ -941,6 +941,134 @@ class APIService: ObservableObject {
         }
         return nil
     }
+
+    // MARK: - File Operations
+
+    /// Upload encrypted file to server
+    func uploadFile(
+        conversationId: UUID,
+        encryptedFile: EncryptedFile,
+        fileName: String,
+        fileSize: Int,
+        mimeType: String,
+        deviceId: String
+    ) async throws -> FileUploadResponse {
+        print("[DEBUG] APIService - Uploading file: \(fileName) (\(fileSize) bytes)")
+
+        let endpoint = "/api/conversations/\(conversationId.uuidString)/files"
+        guard let url = URL(string: "\(baseURL)\(endpoint)") else {
+            throw NetworkError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(deviceId, forHTTPHeaderField: "X-Device-ID")
+
+        // Create multipart form data
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+
+        // Add ciphertext field
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"ciphertext\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(encryptedFile.ciphertext)\r\n".data(using: .utf8)!)
+
+        // Add nonce field
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"nonce\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(encryptedFile.nonce)\r\n".data(using: .utf8)!)
+
+        // Add tag field
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"tag\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(encryptedFile.tag)\r\n".data(using: .utf8)!)
+
+        // Add fileName field
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"fileName\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(fileName)\r\n".data(using: .utf8)!)
+
+        // Add fileSize field
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"fileSize\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(fileSize)\r\n".data(using: .utf8)!)
+
+        // Add mimeType field
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"mimeType\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(mimeType)\r\n".data(using: .utf8)!)
+
+        // Final boundary
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+        request.httpBody = body
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.unknownError
+        }
+
+        switch httpResponse.statusCode {
+        case 201:
+            let uploadResponse = try JSONDecoder().decode(FileUploadResponse.self, from: data)
+            print("[DEBUG] APIService - File uploaded successfully: \(uploadResponse.fileId)")
+            return uploadResponse
+        case 413:
+            let errorMessage = extractErrorMessage(from: data) ?? "File is too large"
+            throw NetworkError.messageTooLarge(errorMessage)
+        case 400...499:
+            throw NetworkError.serverError(httpResponse.statusCode)
+        case 500...599:
+            throw NetworkError.serverError(httpResponse.statusCode)
+        default:
+            throw NetworkError.unknownError
+        }
+    }
+
+    /// Download encrypted file from server
+    func downloadFile(url: String) async throws -> Data {
+        print("[DEBUG] APIService - Downloading file from: \(url)")
+
+        guard let fileUrl = URL(string: url) else {
+            throw NetworkError.invalidURL
+        }
+
+        var request = URLRequest(url: fileUrl)
+        request.httpMethod = "GET"
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.unknownError
+        }
+
+        switch httpResponse.statusCode {
+        case 200:
+            print("[DEBUG] APIService - File downloaded successfully (\(data.count) bytes)")
+            return data
+        case 404:
+            throw NetworkError.conversationNotFound
+        case 400...499:
+            throw NetworkError.serverError(httpResponse.statusCode)
+        case 500...599:
+            throw NetworkError.serverError(httpResponse.statusCode)
+        default:
+            throw NetworkError.unknownError
+        }
+    }
+}
+
+// MARK: - File Upload Models
+
+struct FileUploadResponse: Codable {
+    let fileId: String
+    let fileUrl: String
+    let fileName: String
+    let fileSize: Int
+    let fileMimeType: String
 }
 
 // MARK: - Subscription Models
