@@ -25,10 +25,10 @@ struct SecureMessagingAppApp: App {
     
     func handleIncomingURL(_ url: URL) {
         print("App: Received URL: \(url.absoluteString)")
-        
-        guard url.scheme == "https" && url.host == "privileged.stratholme.eu" else { 
+
+        guard url.scheme == "https" && url.host == URL(string: Config.baseURL)?.host else {
             print("App: URL scheme or host doesn't match")
-            return 
+            return
         }
         
         let pathComponents = url.pathComponents

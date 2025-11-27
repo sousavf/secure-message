@@ -40,11 +40,23 @@ struct ConversationListView: View {
                         ScrollView {
                             LazyVStack(spacing: 1) {
                                 ForEach(conversations) { conversation in
-                                    NavigationLink(destination: ConversationDetailView(conversation: conversation, deviceId: deviceId, onUpdate: {
-                                        Task {
-                                            await loadConversations()
-                                        }
-                                    })) {
+                                    NavigationLink(
+                                        destination: ConversationDetailView(conversation: conversation, deviceId: deviceId, onUpdate: {
+                                            Task {
+                                                await loadConversations()
+                                            }
+                                        }),
+                                        isActive: Binding(
+                                            get: { selectedConversation?.id == conversation.id },
+                                            set: { isActive in
+                                                if isActive {
+                                                    selectedConversation = conversation
+                                                } else {
+                                                    selectedConversation = nil
+                                                }
+                                            }
+                                        )
+                                    ) {
                                         ConversationRowView(conversation: conversation, onEditName: {
                                             openNameEditor(for: conversation)
                                         })
@@ -272,7 +284,10 @@ struct ConversationListView: View {
             // Check if we already have this conversation
             if let existingConversation = conversations.first(where: { $0.id == conversationId }) {
                 print("[DEBUG] ConversationListView - Conversation already in list, navigating to it")
-                selectedConversation = existingConversation
+                // Delay selection to ensure view is ready
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    selectedConversation = existingConversation
+                }
             } else {
                 print("[DEBUG] ConversationListView - Conversation not in list, fetching from backend")
                 // Fetch the conversation from the backend and register as participant
@@ -298,7 +313,11 @@ struct ConversationListView: View {
                                 updatedConversation.localName = customName
                             }
                             conversations.insert(updatedConversation, at: 0)
-                            selectedConversation = updatedConversation
+
+                            // Delay selection to ensure view has rendered the new conversation
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                selectedConversation = updatedConversation
+                            }
                         }
                     } catch let error as NetworkError {
                         print("[ERROR] ConversationListView - Failed to fetch conversation or join: \(error)")

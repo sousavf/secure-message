@@ -45,25 +45,36 @@ struct ConversationDetailView: View {
                     } else {
                         ScrollViewReader { scrollProxy in
                             List {
-                                ForEach(messages) { message in
+                                ForEach(messages, id: \.id) { message in
                                     ConversationMessageRow(message: message, conversationEncryptionKey: conversation.encryptionKey, deviceId: deviceId)
                                         .id(message.id)
                                         .listRowSeparator(.hidden)
-                                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                                        .listRowInsets(EdgeInsets(top: 1, leading: 0, bottom: 1, trailing: 0))
                                         .listRowBackground(Color.clear)
                                 }
                             }
                             .scrollContentBackground(.hidden)
                             .background(Color(.systemBackground))
+                            .onTapGesture {
+                                messageFieldFocused = false
+                            }
                             .onChange(of: messages.count) { _ in
-                                if let lastMessage = messages.last {
-                                    withAnimation {
-                                        scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
+                                // Delay scroll to ensure layout is complete
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    if let lastMessage = messages.last {
+                                        withAnimation {
+                                            scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
+                                        }
                                     }
                                 }
                             }
-                            .onTapGesture {
-                                messageFieldFocused = false
+                            .onAppear {
+                                // Scroll to bottom when view appears
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    if let lastMessage = messages.last {
+                                        scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
+                                    }
+                                }
                             }
                         }
                     }
@@ -76,7 +87,7 @@ struct ConversationDetailView: View {
                             TextField("Type a message...", text: $messageText, axis: .vertical)
                                 .lineLimit(5)
                                 .focused($messageFieldFocused)
-                                .font(.system(size: 18, weight: .regular))
+                                .font(.system(size: 16, weight: .regular))
                                 .padding(12)
                                 .background(Color(.systemGray6))
                                 .cornerRadius(20)
@@ -458,18 +469,18 @@ struct ConversationMessageRow: View {
     var body: some View {
         HStack(spacing: 12) {
             if isSentByCurrentDevice {
-                Spacer(minLength: 32)
+                Spacer()
             }
 
             messageBubble
-                .frame(maxWidth: 280, alignment: isSentByCurrentDevice ? .trailing : .leading)
+                .frame(maxWidth: 320, alignment: .center)
 
             if !isSentByCurrentDevice {
-                Spacer(minLength: 32)
+                Spacer()
             }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 4)
+        .padding(.vertical, 1)
         .onAppear {
             if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag {
                 let keyToUse = message.encryptionKey ?? conversationEncryptionKey
@@ -481,7 +492,7 @@ struct ConversationMessageRow: View {
     }
 
     private var messageBubble: some View {
-        VStack(alignment: isSentByCurrentDevice ? .trailing : .leading, spacing: 2) {
+        VStack(alignment: isSentByCurrentDevice ? .trailing : .leading, spacing: 0.5) {
             // Message content bubble
             if let decryptedContent = decryptedText ?? message.decryptedContent {
                 messageText(decryptedContent)
@@ -504,10 +515,16 @@ struct ConversationMessageRow: View {
             HStack(spacing: 4) {
                 Spacer()
 
+                // Always show timestamp if available
                 if let createdAt = message.createdAt {
                     Text(createdAt.formatted(date: .omitted, time: .shortened))
                         .font(.caption2)
                         .foregroundColor(isSentByCurrentDevice ? .white.opacity(0.7) : .gray)
+                } else {
+                    // Placeholder to maintain layout even if timestamp not available
+                    Text("--:--")
+                        .font(.caption2)
+                        .foregroundColor(isSentByCurrentDevice ? .white.opacity(0.3) : .gray.opacity(0.3))
                 }
 
                 if isSentByCurrentDevice {
