@@ -45,19 +45,15 @@ class FileService {
 
     /// Encrypt file data with conversation key
     func encryptFile(_ fileData: Data, key: SymmetricKey) throws -> EncryptedFile {
-        let nonce = NIST.GCM.Nonce()
+        let nonce = try AES.GCM.Nonce()
         let sealedBox = try AES.GCM.seal(fileData, using: key, nonce: nonce)
 
-        guard let ciphertext = sealedBox.ciphertext.base64EncodedString().isEmpty == false ?
-              sealedBox.ciphertext.base64EncodedString() : nil else {
-            throw FileServiceError.encryptionFailed
-        }
-
+        let ciphertextString = sealedBox.ciphertext.base64EncodedString()
         let nonceString = nonce.withUnsafeBytes { Data($0).base64EncodedString() }
         let tagString = sealedBox.tag.base64EncodedString()
 
         return EncryptedFile(
-            ciphertext: ciphertext,
+            ciphertext: ciphertextString,
             nonce: nonceString,
             tag: tagString
         )
@@ -67,15 +63,18 @@ class FileService {
     func decryptFile(_ encryptedFile: EncryptedFile, key: SymmetricKey) throws -> Data {
         guard let ciphertextData = Data(base64Encoded: encryptedFile.ciphertext),
               let nonceData = Data(base64Encoded: encryptedFile.nonce),
-              let tagData = Data(base64Encoded: encryptedFile.tag),
-              let nonce = try? NIST.GCM.Nonce(data: nonceData) else {
+              let tagData = Data(base64Encoded: encryptedFile.tag) else {
             throw FileServiceError.decryptionFailed
         }
 
-        let sealedBox = try AES.GCM.SealedBox(nonce: nonce, ciphertext: ciphertextData, tag: tagData)
-        let decryptedData = try AES.GCM.open(sealedBox, using: key)
-
-        return decryptedData
+        do {
+            let nonce = try AES.GCM.Nonce(data: nonceData)
+            let sealedBox = try AES.GCM.SealedBox(nonce: nonce, ciphertext: ciphertextData, tag: tagData)
+            let decryptedData = try AES.GCM.open(sealedBox, using: key)
+            return decryptedData
+        } catch {
+            throw FileServiceError.decryptionFailed
+        }
     }
 
     // MARK: - File Utilities
@@ -143,13 +142,7 @@ class FileService {
     }
 }
 
-// MARK: - Models
-
-struct EncryptedFile: Codable {
-    let ciphertext: String
-    let nonce: String
-    let tag: String
-}
+// MARK: - Error Handling
 
 enum FileServiceError: Error, LocalizedError {
     case fileTooLarge(String)

@@ -32,6 +32,7 @@
 		E13C95D62ECE714C00D77F31 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95D52ECE714C00D77F31 /* AppDelegate.swift */; };
 		E13C95D82ECE715800D77F31 /* PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95D72ECE715800D77F31 /* PushNotificationService.swift */; };
 		E189F1A72ED8A0E00093A2C6 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = E189F1A62ED8A0E00093A2C6 /* Config.swift */; };
+		E189F1A92ED8AC2C0093A2C6 /* FileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E189F1A82ED8AC2C0093A2C6 /* FileService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -62,6 +63,7 @@
 		E13C95D52ECE714C00D77F31 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E13C95D72ECE715800D77F31 /* PushNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationService.swift; sourceTree = "<group>"; };
 		E189F1A62ED8A0E00093A2C6 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		E189F1A82ED8AC2C0093A2C6 /* FileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -131,6 +133,7 @@
 				E13C95D32ECE66DB00D77F31 /* ConversationNameStore.swift */,
 				E13C95BD2ECCCA8E00D77F31 /* KeyStore.swift */,
 				1A1A1A271A1A1A1A1A1A1A27 /* CryptoManager.swift */,
+				E189F1A82ED8AC2C0093A2C6 /* FileService.swift */,
 				E13C95D72ECE715800D77F31 /* PushNotificationService.swift */,
 				1A1A1A291A1A1A1A1A1A1A29 /* APIService.swift */,
 				E13C95D12ECCD64A00D77F31 /* ConversationLinkStore.swift */,
@@ -227,6 +230,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E189F1A92ED8AC2C0093A2C6 /* FileService.swift in Sources */,
 				E189F1A72ED8A0E00093A2C6 /* Config.swift in Sources */,
 				E13C95D82ECE715800D77F31 /* PushNotificationService.swift in Sources */,
 				E13C95D62ECE714C00D77F31 /* AppDelegate.swift in Sources */,
@@ -384,7 +388,7 @@
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = "Safe Whisper/Safe Whisper.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 19;
 				DEVELOPMENT_ASSET_PATHS = "\"SecureMessagingApp/Preview Content\"";
 				DEVELOPMENT_TEAM = RJ3GB6YDXL;
 				ENABLE_PREVIEWS = YES;
@@ -424,7 +428,7 @@
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = "Safe Whisper/Safe Whisper.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 19;
 				DEVELOPMENT_ASSET_PATHS = "\"SecureMessagingApp/Preview Content\"";
 				DEVELOPMENT_TEAM = RJ3GB6YDXL;
 				ENABLE_PREVIEWS = YES;

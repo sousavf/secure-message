@@ -6,6 +6,12 @@ struct EncryptedMessage: Codable {
     let tag: String
 }
 
+struct EncryptedFile: Codable {
+    let ciphertext: String
+    let nonce: String
+    let tag: String
+}
+
 enum MessageType: String, Codable {
     case text = "TEXT"
     case sticker = "STICKER"
