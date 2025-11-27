@@ -144,18 +144,27 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             print("[DEBUG] AppDelegate - Deep link type: \(type), id: \(id)")
 
             if type == "message" {
-                // Handle message link
+                // Handle message link - route to receive tab
+                let messageUrl = URL(string: "https://privileged.stratholme.eu/\(id)")
                 NotificationCenter.default.post(
-                    name: NSNotification.Name("DeepLinkMessageReceived"),
-                    object: nil,
-                    userInfo: ["messageId": id]
+                    name: NSNotification.Name("HandleSecureMessageURL"),
+                    object: messageUrl
                 )
             } else if type == "conversation" {
-                // Handle conversation link
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("DeepLinkConversationReceived"),
-                    object: id
-                )
+                // Handle conversation link - construct the join URL
+                // Format: https://privileged.stratholme.eu/join/{conversationId}#{encryptionKey}
+                let encryptionKey = KeyStore.shared.retrieveKey(for: UUID(uuidString: id) ?? UUID()) ?? ""
+                let joinUrlString = "https://privileged.stratholme.eu/join/\(id)\(encryptionKey.isEmpty ? "" : "#" + encryptionKey)"
+
+                if let joinUrl = URL(string: joinUrlString) {
+                    print("[DEBUG] AppDelegate - Posting conversation join URL: \(joinUrl.absoluteString)")
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("HandleSecureMessageURL"),
+                        object: joinUrl
+                    )
+                } else {
+                    print("[ERROR] AppDelegate - Failed to construct conversation URL")
+                }
             }
 
             return true

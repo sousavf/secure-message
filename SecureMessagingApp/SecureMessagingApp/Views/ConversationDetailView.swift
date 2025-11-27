@@ -453,23 +453,21 @@ struct ConversationMessageRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 12) {
             if isSentByCurrentDevice {
-                // Sent message - right-aligned
-                Spacer()
-                messageBubble
-                    .foregroundColor(.white)
-            } else {
-                // Received message - left-aligned
-                messageBubble
-                    .foregroundColor(.primary)
-                Spacer()
+                Spacer(minLength: 32)
+            }
+
+            messageBubble
+                .frame(maxWidth: 280, alignment: isSentByCurrentDevice ? .trailing : .leading)
+
+            if !isSentByCurrentDevice {
+                Spacer(minLength: 32)
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 4)
         .onAppear {
-            // Try to decrypt on appearance if we have the key
             if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag {
                 let keyToUse = message.encryptionKey ?? conversationEncryptionKey
                 if let keyString = keyToUse {
@@ -480,72 +478,72 @@ struct ConversationMessageRow: View {
     }
 
     private var messageBubble: some View {
-        VStack(alignment: isSentByCurrentDevice ? .trailing : .leading, spacing: 4) {
+        VStack(alignment: isSentByCurrentDevice ? .trailing : .leading, spacing: 2) {
             // Message content bubble
             if let decryptedContent = decryptedText ?? message.decryptedContent {
-                Text(decryptedContent)
-                    .padding(12)
-                    .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
-                    .cornerRadius(16)
+                messageText(decryptedContent)
             } else if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag {
                 let keyToUse = message.encryptionKey ?? conversationEncryptionKey
                 if let keyString = keyToUse {
                     if let decrypted = attemptDecryption(ciphertext: ciphertext, nonce: nonce, tag: tag, keyString: keyString) {
-                        Text(decrypted)
-                            .padding(12)
-                            .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
-                            .cornerRadius(16)
+                        messageText(decrypted)
                     } else {
-                        Text("[Unable to decrypt]")
-                            .padding(12)
-                            .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
-                            .cornerRadius(16)
-                            .italic()
+                        messageText("[Unable to decrypt]", isError: true)
                     }
                 } else {
-                    Text("[Encrypted Message]")
-                        .padding(12)
-                        .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
-                        .cornerRadius(16)
-                        .italic()
+                    messageText("[Encrypted Message]", isError: true)
                 }
             } else {
-                Text("[Encrypted Message]")
-                    .padding(12)
-                    .background(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
-                    .cornerRadius(16)
-                    .italic()
+                messageText("[Encrypted Message]", isError: true)
             }
 
-            // Time and status row
+            // Time and status row - inline with message
             HStack(spacing: 4) {
+                Spacer()
+
                 if let createdAt = message.createdAt {
                     Text(createdAt.formatted(date: .omitted, time: .shortened))
                         .font(.caption2)
-                        .foregroundColor(.gray)
+                        .foregroundColor(isSentByCurrentDevice ? .white.opacity(0.7) : .gray)
                 }
 
-                // Status indicators for sent messages only
                 if isSentByCurrentDevice {
                     if message.readAt != nil {
-                        // Double blue check for read
                         HStack(spacing: -2) {
                             Text("✓")
                                 .font(.caption2)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.white.opacity(0.8))
                             Text("✓")
                                 .font(.caption2)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.white.opacity(0.8))
                         }
                     } else {
-                        // Single check for delivered
                         Text("✓")
                             .font(.caption2)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.6))
                     }
                 }
             }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 4)
         }
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(isSentByCurrentDevice ? Color.blue : Color.gray.opacity(0.2))
+        )
+    }
+
+    @ViewBuilder
+    private func messageText(_ text: String, isError: Bool = false) -> some View {
+        Text(text)
+            .lineLimit(nil)
+            .multilineTextAlignment(isSentByCurrentDevice ? .trailing : .leading)
+            .foregroundColor(isSentByCurrentDevice ? .white : .primary)
+            .font(.system(size: 16, weight: .regular, design: .default))
+            .italic(isError)
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+            .padding(.bottom, 2)
     }
 
     private func attemptDecryption(ciphertext: String, nonce: String, tag: String, keyString: String) -> String? {
