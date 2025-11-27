@@ -97,8 +97,8 @@ struct SettingsView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         
                         VStack(spacing: 12) {
-                            InfoRow(label: "Version", value: "1.0.0")
-                            InfoRow(label: "Build", value: "1")
+                            InfoRow(label: "Version", value: "2.0.0")
+                            InfoRow(label: "Build", value: "13")
                             InfoRow(label: "Server", value: "privileged.stratholme.eu")
                         }
                     }
