@@ -28,7 +28,8 @@ public class Message {
     public enum MessageType {
         TEXT,
         STICKER,
-        IMAGE
+        IMAGE,
+        FILE
     }
 
     @Id
@@ -73,6 +74,22 @@ public class Message {
     @Enumerated(EnumType.STRING)
     @Column(name = "message_type", nullable = false)
     private MessageType messageType = MessageType.TEXT;
+
+    // File metadata (only populated for FILE type messages)
+    @Column(name = "file_name")
+    @Size(max = 255, message = "File name too large")
+    private String fileName;
+
+    @Column(name = "file_size")
+    private Integer fileSize;
+
+    @Column(name = "file_mime_type")
+    @Size(max = 100, message = "MIME type too large")
+    private String fileMimeType;
+
+    @Column(name = "file_url")
+    @Size(max = 2048, message = "File URL too large")
+    private String fileUrl;
 
     public Message() {}
 
@@ -178,5 +195,37 @@ public class Message {
 
     public void setMessageType(MessageType messageType) {
         this.messageType = messageType;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public Integer getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(Integer fileSize) {
+        this.fileSize = fileSize;
+    }
+
+    public String getFileMimeType() {
+        return fileMimeType;
+    }
+
+    public void setFileMimeType(String fileMimeType) {
+        this.fileMimeType = fileMimeType;
+    }
+
+    public String getFileUrl() {
+        return fileUrl;
+    }
+
+    public void setFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
     }
 }

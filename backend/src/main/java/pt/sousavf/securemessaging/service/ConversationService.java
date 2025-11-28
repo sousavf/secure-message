@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.sousavf.securemessaging.entity.Conversation;
 import pt.sousavf.securemessaging.entity.ConversationParticipant;
+import pt.sousavf.securemessaging.entity.Message;
 import pt.sousavf.securemessaging.entity.User;
 import pt.sousavf.securemessaging.repository.ConversationRepository;
 import pt.sousavf.securemessaging.repository.ConversationParticipantRepository;
@@ -324,5 +325,21 @@ public class ConversationService {
             participantRepository.save(participant);
             logger.info("Participant marked as departed - Conversation: {}, Device: {}", conversationId, deviceId);
         }
+    }
+
+    /**
+     * Save a message (used for file uploads and other message types)
+     */
+    @Transactional
+    public Message saveMessage(Message message) {
+        logger.info("Saving message - Type: {}, Conversation: {}", message.getMessageType(), message.getConversationId());
+        Message savedMessage = messageRepository.save(message);
+
+        // Invalidate Redis cache for this conversation's messages
+        if (message.getConversationId() != null) {
+            conversationRedisRepository.invalidateConversationMessages(message.getConversationId());
+        }
+
+        return savedMessage;
     }
 }
