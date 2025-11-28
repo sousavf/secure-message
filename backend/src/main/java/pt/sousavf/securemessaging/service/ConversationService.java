@@ -333,13 +333,6 @@ public class ConversationService {
     @Transactional
     public Message saveMessage(Message message) {
         logger.info("Saving message - Type: {}, Conversation: {}", message.getMessageType(), message.getConversationId());
-        Message savedMessage = messageRepository.save(message);
-
-        // Invalidate Redis cache for this conversation's messages
-        if (message.getConversationId() != null) {
-            conversationRedisRepository.invalidateConversationMessages(message.getConversationId());
-        }
-
-        return savedMessage;
+        return messageRepository.save(message);
     }
 }

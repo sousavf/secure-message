@@ -10,6 +10,7 @@ import pt.sousavf.securemessaging.dto.FileUploadRequest;
 import pt.sousavf.securemessaging.dto.FileUploadResponse;
 import pt.sousavf.securemessaging.entity.Conversation;
 import pt.sousavf.securemessaging.entity.ConversationParticipant;
+import pt.sousavf.securemessaging.entity.Message;
 import pt.sousavf.securemessaging.service.ConversationService;
 import pt.sousavf.securemessaging.service.ShareService;
 import org.slf4j.Logger;
