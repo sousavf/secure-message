@@ -1,5 +1,7 @@
 import SwiftUI
 import CryptoKit
+import PhotosUI
+import UIKit
 
 struct ConversationDetailView: View {
     @State var conversation: Conversation
@@ -20,6 +22,15 @@ struct ConversationDetailView: View {
 
     // Push notification state
     @State private var pushNotificationsEnabled = false
+
+    // File sharing state
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var showPhotosPicker: Bool = false
+    @State private var showFilePicker: Bool = false
+    @State private var showCamera: Bool = false
+    @State private var selectedFileData: Data?
+    @State private var selectedFileName: String?
+    @State private var isUploadingFile: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -83,7 +94,57 @@ struct ConversationDetailView: View {
 
                     // Message Input
                     VStack(spacing: 12) {
+                        // File preview if selected
+                        if let fileName = selectedFileName {
+                            HStack(spacing: 12) {
+                                Image(systemName: "paperclip.circle.fill")
+                                    .foregroundColor(.indigo)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(fileName)
+                                        .font(.caption)
+                                        .lineLimit(1)
+                                    if let fileData = selectedFileData {
+                                        Text(FileService.shared.formatFileSize(fileData.count))
+                                            .font(.caption2)
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                                Spacer()
+                                Button(action: {
+                                    selectedFileData = nil
+                                    selectedFileName = nil
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                            .padding(12)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(8)
+                            .padding(.horizontal)
+                        }
+
                         HStack(spacing: 12) {
+                            // Attachment button
+                            Menu {
+                                Button(action: { showPhotosPicker = true }) {
+                                    Label("Photo Library", systemImage: "photo.fill")
+                                }
+                                Button(action: { showCamera = true }) {
+                                    Label("Camera", systemImage: "camera.fill")
+                                }
+                                Button(action: { showFilePicker = true }) {
+                                    Label("Files", systemImage: "doc.fill")
+                                }
+                            } label: {
+                                Image(systemName: "paperclip")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 50, height: 50)
+                                    .background(Color.indigo)
+                                    .cornerRadius(25)
+                            }
+
                             TextField("Type a message...", text: $messageText, axis: .vertical)
                                 .lineLimit(5)
                                 .focused($messageFieldFocused)
@@ -95,10 +156,14 @@ struct ConversationDetailView: View {
 
                             Button(action: {
                                 Task {
-                                    await sendMessage()
+                                    if selectedFileData != nil {
+                                        await sendFile()
+                                    } else {
+                                        await sendMessage()
+                                    }
                                 }
                             }) {
-                                if isSending {
+                                if isSending || isUploadingFile {
                                     ProgressView()
                                         .tint(.indigo)
                                 } else {
@@ -110,7 +175,10 @@ struct ConversationDetailView: View {
                             .frame(width: 50, height: 50)
                             .background(Color.indigo)
                             .cornerRadius(25)
-                            .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty || isSending || conversation.isExpired)
+                            .disabled(
+                                (messageText.trimmingCharacters(in: .whitespaces).isEmpty && selectedFileData == nil) ||
+                                isSending || isUploadingFile || conversation.isExpired
+                            )
                         }
 
                         // Only show share button for conversation creator if no one has joined yet
@@ -185,6 +253,27 @@ struct ConversationDetailView: View {
             }
             .sheet(isPresented: $showShareModal) {
                 ConversationShareView(shareLink: $shareLink, conversationId: conversation.id)
+            }
+            .photosPicker(
+                isPresented: $showPhotosPicker,
+                selection: $selectedPhotoItem,
+                matching: .images,
+                photoLibrary: .shared()
+            )
+            .onChange(of: selectedPhotoItem) { oldValue, newValue in
+                Task {
+                    await handlePhotoSelection(newValue)
+                }
+            }
+            .sheet(isPresented: $showCamera) {
+                ImagePickerView(selectedImage: $selectedFileData, sourceType: .camera) { image in
+                    selectedFileName = "photo_\(Date().timeIntervalSince1970).jpg"
+                }
+            }
+            .sheet(isPresented: $showFilePicker) {
+                DocumentPickerView { url in
+                    handleFileSelection(url)
+                }
             }
             .onAppear {
                 Task {
@@ -453,6 +542,95 @@ struct ConversationDetailView: View {
         let hash = SHA256.hash(data: data)
         let hashString = hash.compactMap { String(format: "%02x", $0) }.joined()
         return String(hashString.prefix(32))
+    }
+
+    // MARK: - File Operations
+
+    @MainActor
+    private func handlePhotoSelection(_ item: PhotosPickerItem?) async {
+        guard let item = item else { return }
+
+        do {
+            if let imageData = try await item.loadTransferable(type: Data.self) {
+                print("[DEBUG] ConversationDetailView - Processing selected photo")
+                let compressedData = try FileService.shared.compressImage(imageData)
+                selectedFileData = compressedData
+                selectedFileName = "photo_\(Date().timeIntervalSince1970).jpg"
+            }
+        } catch {
+            print("[ERROR] ConversationDetailView - Failed to load photo: \(error)")
+            errorMessage = "Failed to load photo: \(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
+    private func handleFileSelection(_ url: URL) {
+        print("[DEBUG] ConversationDetailView - Processing selected file: \(url.lastPathComponent)")
+
+        do {
+            _ = try url.checkResourceIsReachable()
+            let fileData = try Data(contentsOf: url)
+            try FileService.shared.validateFileSize(fileData)
+
+            selectedFileData = fileData
+            selectedFileName = url.lastPathComponent
+        } catch {
+            print("[ERROR] ConversationDetailView - Failed to read file: \(error)")
+            errorMessage = "Failed to load file: \(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
+    private func sendFile() async {
+        guard let fileData = selectedFileData,
+              let fileName = selectedFileName,
+              let encryptionKey = conversation.encryptionKey else {
+            errorMessage = "File or encryption key missing"
+            return
+        }
+
+        isUploadingFile = true
+        defer { isUploadingFile = false }
+
+        do {
+            print("[DEBUG] ConversationDetailView - Encrypting and uploading file: \(fileName)")
+
+            // Get encryption key
+            let key = try CryptoManager.keyFromBase64String(encryptionKey)
+
+            // Encrypt file
+            let encryptedFile = try FileService.shared.encryptFile(fileData, key: key)
+
+            // Get MIME type
+            let mimeType = FileService.shared.getMimeType(for: fileName)
+
+            // Upload file
+            let uploadResponse = try await apiService.uploadFile(
+                conversationId: conversation.id,
+                encryptedFile: encryptedFile,
+                fileName: fileName,
+                fileSize: fileData.count,
+                mimeType: mimeType,
+                deviceId: deviceId
+            )
+
+            print("[DEBUG] ConversationDetailView - File uploaded successfully: \(uploadResponse.fileId)")
+
+            // Reset file selection
+            selectedFileData = nil
+            selectedFileName = nil
+            errorMessage = nil
+
+            // Reload messages to get the file message from server
+            await loadMessages()
+            onUpdate()
+        } catch let error as FileServiceError {
+            print("[ERROR] ConversationDetailView - File error: \(error)")
+            errorMessage = error.localizedDescription
+        } catch {
+            print("[ERROR] ConversationDetailView - Failed to send file: \(error)")
+            errorMessage = "Failed to send file: \(error.localizedDescription)"
+        }
     }
 }
 

@@ -33,6 +33,8 @@
 		E13C95D82ECE715800D77F31 /* PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E13C95D72ECE715800D77F31 /* PushNotificationService.swift */; };
 		E189F1A72ED8A0E00093A2C6 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = E189F1A62ED8A0E00093A2C6 /* Config.swift */; };
 		E189F1A92ED8AC2C0093A2C6 /* FileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E189F1A82ED8AC2C0093A2C6 /* FileService.swift */; };
+		E189F1AC2ED9737B0093A2C6 /* DocumentPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E189F1AA2ED9737B0093A2C6 /* DocumentPickerView.swift */; };
+		E189F1AD2ED9737B0093A2C6 /* ImagePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E189F1AB2ED9737B0093A2C6 /* ImagePickerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +66,8 @@
 		E13C95D72ECE715800D77F31 /* PushNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationService.swift; sourceTree = "<group>"; };
 		E189F1A62ED8A0E00093A2C6 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		E189F1A82ED8AC2C0093A2C6 /* FileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileService.swift; sourceTree = "<group>"; };
+		E189F1AA2ED9737B0093A2C6 /* DocumentPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPickerView.swift; sourceTree = "<group>"; };
+		E189F1AB2ED9737B0093A2C6 /* ImagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePickerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -147,6 +151,8 @@
 		1A1A1A391A1A1A1A1A1A1A39 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				E189F1AA2ED9737B0093A2C6 /* DocumentPickerView.swift */,
+				E189F1AB2ED9737B0093A2C6 /* ImagePickerView.swift */,
 				1A1A1A2F1A1A1A1A1A1A1A2F /* ComposeView.swift */,
 				E13C95A32ECCBD1200D77F31 /* ConversationDetailView.swift */,
 				E13C95A12ECCBD1200D77F31 /* ConversationListView.swift */,
@@ -230,6 +236,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E189F1AC2ED9737B0093A2C6 /* DocumentPickerView.swift in Sources */,
+				E189F1AD2ED9737B0093A2C6 /* ImagePickerView.swift in Sources */,
 				E189F1A92ED8AC2C0093A2C6 /* FileService.swift in Sources */,
 				E189F1A72ED8A0E00093A2C6 /* Config.swift in Sources */,
 				E13C95D82ECE715800D77F31 /* PushNotificationService.swift in Sources */,
@@ -388,7 +396,7 @@
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = "Safe Whisper/Safe Whisper.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_ASSET_PATHS = "\"SecureMessagingApp/Preview Content\"";
 				DEVELOPMENT_TEAM = RJ3GB6YDXL;
 				ENABLE_PREVIEWS = YES;
@@ -428,7 +436,7 @@
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = "Safe Whisper/Safe Whisper.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_ASSET_PATHS = "\"SecureMessagingApp/Preview Content\"";
 				DEVELOPMENT_TEAM = RJ3GB6YDXL;
 				ENABLE_PREVIEWS = YES;
