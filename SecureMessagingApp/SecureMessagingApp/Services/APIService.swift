@@ -963,47 +963,19 @@ class APIService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(deviceId, forHTTPHeaderField: "X-Device-ID")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        // Create multipart form data
-        let boundary = "Boundary-\(UUID().uuidString)"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        // Create JSON request body
+        let requestBody: [String: Any] = [
+            "ciphertext": encryptedFile.ciphertext,
+            "nonce": encryptedFile.nonce,
+            "tag": encryptedFile.tag,
+            "fileName": fileName,
+            "fileSize": fileSize,
+            "mimeType": mimeType
+        ]
 
-        var body = Data()
-
-        // Add ciphertext field
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"ciphertext\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(encryptedFile.ciphertext)\r\n".data(using: .utf8)!)
-
-        // Add nonce field
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"nonce\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(encryptedFile.nonce)\r\n".data(using: .utf8)!)
-
-        // Add tag field
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"tag\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(encryptedFile.tag)\r\n".data(using: .utf8)!)
-
-        // Add fileName field
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"fileName\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(fileName)\r\n".data(using: .utf8)!)
-
-        // Add fileSize field
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"fileSize\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(fileSize)\r\n".data(using: .utf8)!)
-
-        // Add mimeType field
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"mimeType\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(mimeType)\r\n".data(using: .utf8)!)
-
-        // Final boundary
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-
-        request.httpBody = body
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
         let (data, response) = try await session.data(for: request)
 
