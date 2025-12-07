@@ -672,7 +672,10 @@ struct ConversationMessageRow: View {
     private var messageBubble: some View {
         VStack(alignment: isSentByCurrentDevice ? .trailing : .leading, spacing: 0.5) {
             // Message content bubble
-            if let decryptedContent = decryptedText ?? message.decryptedContent {
+            if message.messageType == .file || message.messageType == .image {
+                // File or image message
+                fileMessageContent
+            } else if let decryptedContent = decryptedText ?? message.decryptedContent {
                 messageText(decryptedContent)
             } else if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag {
                 let keyToUse = message.encryptionKey ?? conversationEncryptionKey
@@ -742,6 +745,43 @@ struct ConversationMessageRow: View {
             .padding(.horizontal, 12)
             .padding(.top, 8)
             .padding(.bottom, 2)
+    }
+
+    private var fileMessageContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                // File icon
+                Image(systemName: message.messageType == .image ? "photo.fill" : "doc.fill")
+                    .font(.system(size: 32))
+                    .foregroundColor(isSentByCurrentDevice ? .white.opacity(0.9) : .indigo)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    // File name
+                    if let fileName = message.fileName {
+                        Text(fileName)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(isSentByCurrentDevice ? .white : .primary)
+                            .lineLimit(2)
+                    }
+
+                    // File size
+                    if let fileSize = message.fileSize {
+                        Text(FileService.shared.formatFileSize(fileSize))
+                            .font(.caption)
+                            .foregroundColor(isSentByCurrentDevice ? .white.opacity(0.7) : .gray)
+                    }
+                }
+
+                Spacer()
+
+                // Download button
+                Image(systemName: "arrow.down.circle")
+                    .font(.system(size: 24))
+                    .foregroundColor(isSentByCurrentDevice ? .white.opacity(0.8) : .indigo)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
+        }
     }
 
     private func attemptDecryption(ciphertext: String, nonce: String, tag: String, keyString: String) -> String? {
