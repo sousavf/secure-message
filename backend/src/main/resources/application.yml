@@ -48,6 +48,12 @@ spring:
   jackson:
     default-property-inclusion: NON_NULL
 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 15MB      # Maximum file size (with base64 overhead)
+      max-request-size: 20MB   # Maximum request size
+
   data.redis:
     host: ${REDIS_HOST:localhost}
     port: ${REDIS_PORT:6379}
