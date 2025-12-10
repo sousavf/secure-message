@@ -977,6 +977,11 @@ class APIService: ObservableObject {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
+        // Debug logging
+        print("[DEBUG] APIService - File upload request:")
+        print("  Content-Type: \(request.value(forHTTPHeaderField: "Content-Type") ?? "MISSING")")
+        print("  Body size: \(request.httpBody?.count ?? 0) bytes")
+
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
