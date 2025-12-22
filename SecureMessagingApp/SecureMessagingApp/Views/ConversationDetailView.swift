@@ -639,6 +639,10 @@ struct ConversationMessageRow: View {
     let conversationEncryptionKey: String?
     let deviceId: String
     @State private var decryptedText: String?
+    @State private var downloadedFileData: Data?
+    @State private var isDownloading: Bool = false
+    @State private var downloadError: String?
+    @State private var showImageViewer: Bool = false
 
     var isSentByCurrentDevice: Bool {
         message.senderDeviceId == deviceId
@@ -749,6 +753,23 @@ struct ConversationMessageRow: View {
 
     private var fileMessageContent: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // Show image inline if it's an image type and we have downloaded data
+            if message.messageType == .image, let imageData = downloadedFileData, let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: 300, maxHeight: 300)
+                    .cornerRadius(12)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 8)
+                    .onTapGesture {
+                        showImageViewer = true
+                    }
+                    .sheet(isPresented: $showImageViewer) {
+                        ImageViewerSheet(image: uiImage)
+                    }
+            }
+
             HStack(spacing: 12) {
                 // File icon
                 Image(systemName: message.messageType == .image ? "photo.fill" : "doc.fill")
@@ -770,17 +791,60 @@ struct ConversationMessageRow: View {
                             .font(.caption)
                             .foregroundColor(isSentByCurrentDevice ? .white.opacity(0.7) : .gray)
                     }
+
+                    // Download status
+                    if isDownloading {
+                        HStack(spacing: 4) {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                            Text("Downloading...")
+                                .font(.caption2)
+                                .foregroundColor(isSentByCurrentDevice ? .white.opacity(0.7) : .gray)
+                        }
+                    } else if let error = downloadError {
+                        Text(error)
+                            .font(.caption2)
+                            .foregroundColor(.red)
+                    } else if downloadedFileData != nil {
+                        Text("Downloaded")
+                            .font(.caption2)
+                            .foregroundColor(.green)
+                    }
                 }
 
                 Spacer()
 
-                // Download button
-                Image(systemName: "arrow.down.circle")
-                    .font(.system(size: 24))
-                    .foregroundColor(isSentByCurrentDevice ? .white.opacity(0.8) : .indigo)
+                // Download/Save button
+                if downloadedFileData == nil {
+                    Button(action: {
+                        Task {
+                            await downloadFile()
+                        }
+                    }) {
+                        Image(systemName: isDownloading ? "arrow.down.circle.fill" : "arrow.down.circle")
+                            .font(.system(size: 24))
+                            .foregroundColor(isSentByCurrentDevice ? .white.opacity(0.8) : .indigo)
+                    }
+                } else {
+                    Button(action: {
+                        saveFileToPhotos()
+                    }) {
+                        Image(systemName: "square.and.arrow.down")
+                            .font(.system(size: 24))
+                            .foregroundColor(isSentByCurrentDevice ? .white.opacity(0.8) : .indigo)
+                    }
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 12)
+        }
+        .onAppear {
+            // Auto-download images
+            if message.messageType == .image && downloadedFileData == nil {
+                Task {
+                    await downloadFile()
+                }
+            }
         }
     }
 
@@ -793,6 +857,135 @@ struct ConversationMessageRow: View {
         } catch {
             print("[DEBUG] ConversationMessageRow - Failed to decrypt message: \(error)")
             return nil
+        }
+    }
+
+    @MainActor
+    private func downloadFile() async {
+        guard let fileUrl = message.fileUrl else {
+            downloadError = "No file URL"
+            return
+        }
+
+        guard let keyString = message.encryptionKey ?? conversationEncryptionKey else {
+            downloadError = "No encryption key"
+            return
+        }
+
+        isDownloading = true
+        downloadError = nil
+
+        do {
+            print("[DEBUG] ConversationMessageRow - Downloading file from: \(fileUrl)")
+
+            // Download encrypted file
+            let encryptedData = try await APIService.shared.downloadFile(url: fileUrl)
+
+            print("[DEBUG] ConversationMessageRow - Downloaded \(encryptedData.count) bytes, decrypting...")
+
+            // Decrypt file
+            let key = try CryptoManager.keyFromBase64String(keyString)
+
+            // The encrypted file is stored as base64-encoded ciphertext in the message
+            // But when downloaded, it's raw binary data
+            if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag {
+                let encryptedFile = EncryptedFile(ciphertext: ciphertext, nonce: nonce, tag: tag)
+                let decryptedData = try FileService.shared.decryptFile(encryptedFile, key: key)
+
+                downloadedFileData = decryptedData
+                print("[DEBUG] ConversationMessageRow - File decrypted successfully: \(decryptedData.count) bytes")
+            } else {
+                downloadError = "Missing encryption data"
+            }
+
+            isDownloading = false
+        } catch {
+            print("[ERROR] ConversationMessageRow - Failed to download file: \(error)")
+            downloadError = "Download failed"
+            isDownloading = false
+        }
+    }
+
+    private func saveFileToPhotos() {
+        guard let fileData = downloadedFileData else { return }
+
+        // For images, save to photo library
+        if message.messageType == .image, let uiImage = UIImage(data: fileData) {
+            UIImageWriteToSavedPhotosAlbum(uiImage, nil, nil, nil)
+            print("[DEBUG] ConversationMessageRow - Image saved to Photos")
+        } else {
+            // For other files, share via share sheet
+            let activityVC = UIActivityViewController(
+                activityItems: [fileData],
+                applicationActivities: nil
+            )
+
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first,
+               let rootVC = window.rootViewController {
+                rootVC.present(activityVC, animated: true)
+            }
+        }
+    }
+
+}
+
+// MARK: - Image Viewer Sheet
+
+struct ImageViewerSheet: View {
+    let image: UIImage
+    @Environment(\.dismiss) var dismiss
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+
+    var body: some View {
+        NavigationStack {
+            GeometryReader { geometry in
+                ScrollView([.horizontal, .vertical], showsIndicators: false) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: geometry.size.width * scale, height: geometry.size.height * scale)
+                        .scaleEffect(scale)
+                        .gesture(
+                            MagnificationGesture()
+                                .onChanged { value in
+                                    scale = lastScale * value
+                                }
+                                .onEnded { _ in
+                                    lastScale = scale
+                                    // Reset if zoomed out too far
+                                    if scale < 1.0 {
+                                        withAnimation {
+                                            scale = 1.0
+                                            lastScale = 1.0
+                                        }
+                                    }
+                                }
+                        )
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.black)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                    .foregroundColor(.white)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                    }) {
+                        Image(systemName: "square.and.arrow.down")
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .toolbarBackground(Color.black.opacity(0.9), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
         }
     }
 
