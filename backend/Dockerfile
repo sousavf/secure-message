@@ -16,12 +16,11 @@ RUN mkdir -p /app/target/extracted && \
     cd /app/target/extracted && \
     jar -xf ../*.jar
 
-# Final runtime image using minimal base
-FROM eclipse-temurin:17-jre-jammy
+# Final runtime image using minimal base (alpine is much smaller)
+FROM eclipse-temurin:17-jre-alpine
 
-RUN apt-get update && apt-get install -y curl --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/* && \
-    groupadd -r appuser && useradd -r -g appuser appuser
+RUN apk add --no-cache curl && \
+    addgroup -S appuser && adduser -S appuser -G appuser
 
 WORKDIR /app
 
