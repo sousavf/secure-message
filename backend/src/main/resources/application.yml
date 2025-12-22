@@ -135,6 +135,8 @@ app:
     # Statement timeout for PostgreSQL (prevents queries from hanging indefinitely)
     statement-timeout-seconds: 60  # 60 seconds
     query-timeout-seconds: 30      # 30 seconds for API requests
+  file-storage:
+    base-path: ${FILE_STORAGE_PATH:./file-storage}  # Local filesystem storage for encrypted files
   share:
     base-url: ${APP_SHARE_BASE_URL:https://privileged.stratholme.eu}
   subscription:

@@ -50,6 +50,9 @@ public class MessageService {
     @Autowired(required = false)
     private ApnsPushService apnsPushService;
 
+    @Autowired(required = false)
+    private FileStorageService fileStorageService;
+
     @Value("${app.message.default-ttl-hours:24}")
     private int defaultTtlHours;
 
@@ -165,6 +168,11 @@ public class MessageService {
         LocalDateTime now = LocalDateTime.now(java.time.ZoneId.of("UTC"));
         LocalDateTime consumedThreshold = now.minusHours(1);
 
+        // Delete files before deleting messages from database
+        if (fileStorageService != null) {
+            deleteFilesForExpiredMessages(now, consumedThreshold);
+        }
+
         int expiredDeleted = messageRepository.deleteExpiredMessages(now);
         int consumedDeleted = messageRepository.deleteConsumedMessages(consumedThreshold);
         int conversationMessagesDeleted = messageRepository.deleteMessagesFromExpiredConversations(now);
@@ -182,6 +190,48 @@ public class MessageService {
             } catch (Exception e) {
                 logger.error("Error cleaning up conversations", e);
             }
+        }
+
+        // Cleanup old date folders (keep 7 days as safety margin)
+        if (fileStorageService != null) {
+            try {
+                int deletedFiles = fileStorageService.deleteExpiredFiles(now.minusDays(7));
+                if (deletedFiles > 0) {
+                    logger.info("Old folder cleanup: deleted {} files from folders older than 7 days", deletedFiles);
+                }
+            } catch (Exception e) {
+                logger.error("Error cleaning up old file folders", e);
+            }
+        }
+    }
+
+    /**
+     * Delete files from storage for messages that are about to be deleted
+     */
+    private void deleteFilesForExpiredMessages(LocalDateTime now, LocalDateTime consumedThreshold) {
+        try {
+            // Find all FILE type messages that will be deleted
+            List<Message> expiredFileMessages = messageRepository.findAll().stream()
+                .filter(m -> m.getMessageType() == Message.MessageType.FILE)
+                .filter(m -> m.isExpired() || (m.isConsumed() && m.getReadAt() != null && m.getReadAt().isBefore(consumedThreshold)))
+                .toList();
+
+            int filesDeleted = 0;
+            for (Message message : expiredFileMessages) {
+                if (message.getFileUrl() != null && !message.getFileUrl().isEmpty()) {
+                    boolean deleted = fileStorageService.deleteFile(message.getFileUrl());
+                    if (deleted) {
+                        filesDeleted++;
+                        logger.debug("Deleted file for expired message: {}", message.getId());
+                    }
+                }
+            }
+
+            if (filesDeleted > 0) {
+                logger.info("Deleted {} files for expired messages", filesDeleted);
+            }
+        } catch (Exception e) {
+            logger.error("Error deleting files for expired messages", e);
         }
     }
 

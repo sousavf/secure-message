@@ -6,11 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.sousavf.securemessaging.dto.CreateConversationRequest;
 import pt.sousavf.securemessaging.dto.ParticipantStatusResponse;
-import pt.sousavf.securemessaging.dto.FileUploadRequest;
-import pt.sousavf.securemessaging.dto.FileUploadResponse;
 import pt.sousavf.securemessaging.entity.Conversation;
 import pt.sousavf.securemessaging.entity.ConversationParticipant;
-import pt.sousavf.securemessaging.entity.Message;
 import pt.sousavf.securemessaging.service.ConversationService;
 import pt.sousavf.securemessaging.service.ShareService;
 import org.slf4j.Logger;
@@ -262,71 +259,6 @@ public class ConversationController {
         }
     }
 
-    /**
-     * Upload an encrypted file to a conversation
-     * Stores the encrypted file and creates a file message
-     */
-    @PostMapping("/{conversationId}/files")
-    public ResponseEntity<?> uploadFile(
-            @PathVariable UUID conversationId,
-            @RequestHeader("X-Device-ID") String deviceId,
-            @RequestBody FileUploadRequest request) {
-        try {
-            logger.info("File upload started - Conversation: {}, Device: {}, File: {}", conversationId, deviceId, request.getFileName());
-
-            // Validate request
-            if (request.getFileSize() > 10_485_760) { // 10MB limit
-                return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                    .body(new ErrorResponse("File size exceeds 10MB limit"));
-            }
-
-            // Verify conversation exists and user is a participant
-            var conversation = conversationService.getConversation(conversationId);
-            if (conversation.isEmpty() || conversation.get().isDeleted()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse("Conversation not found"));
-            }
-
-            // Create file message with encrypted content
-            Message fileMessage = new Message();
-            fileMessage.setConversationId(conversationId);
-            fileMessage.setSenderDeviceId(deviceId);
-            fileMessage.setMessageType(Message.MessageType.FILE);
-            fileMessage.setCiphertext(request.getCiphertext());
-            fileMessage.setNonce(request.getNonce());
-            fileMessage.setTag(request.getTag());
-            fileMessage.setFileName(request.getFileName());
-            fileMessage.setFileSize(request.getFileSize());
-            fileMessage.setFileMimeType(request.getMimeType());
-
-            // Generate file URL (in real implementation, would store to S3 or filesystem)
-            String fileUrl = "/api/files/" + UUID.randomUUID().toString();
-            fileMessage.setFileUrl(fileUrl);
-
-            // Set expiration same as conversation
-            fileMessage.setExpiresAt(conversation.get().getExpiresAt());
-
-            // Save file message
-            Message savedMessage = conversationService.saveMessage(fileMessage);
-
-            logger.info("File uploaded successfully - Message ID: {}", savedMessage.getId());
-
-            // Return response
-            FileUploadResponse response = new FileUploadResponse(
-                savedMessage.getId().toString(),
-                fileUrl,
-                request.getFileName(),
-                request.getFileSize(),
-                request.getMimeType()
-            );
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (Exception e) {
-            logger.error("Error uploading file", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Error uploading file: " + e.getMessage()));
-        }
-    }
 
     // Response DTOs
 

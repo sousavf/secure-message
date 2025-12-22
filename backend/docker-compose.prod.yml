@@ -64,6 +64,9 @@ services:
       APP_SECURITY_CORS_ALLOWED_ORIGINS_0: ${CORS_ORIGIN_1:-http://localhost:3000}
       APP_SECURITY_CORS_ALLOWED_ORIGINS_1: ${CORS_ORIGIN_2:-https://localhost:3000}
 
+      # File Storage
+      FILE_STORAGE_PATH: /app/file-storage
+
       # Logging
       LOGGING_LEVEL_ROOT: WARN
       LOGGING_LEVEL_COM_EXAMPLE_SECUREMESSAGING: INFO
@@ -85,6 +88,7 @@ services:
       start_period: 60s
     volumes:
       - /opt/safe-whisper/certs/AuthKey.p8:/app/certs/AuthKey.p8:ro
+      - /mnt/raid/safe-whisper-storage:/app/file-storage
     restart: unless-stopped
 
 networks:
