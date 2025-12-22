@@ -358,21 +358,43 @@ struct ConversationDetailView: View {
             let encryptedMessage = try CryptoManager.encrypt(message: trimmedMessage, key: key)
             print("[DEBUG] sendMessage - Encrypted message: ciphertext length=\(encryptedMessage.ciphertext.count), nonce=\(encryptedMessage.nonce), tag=\(encryptedMessage.tag)")
 
-            print("[DEBUG] sendMessage - Sending to backend, conversationId=\(conversation.id), deviceId=\(deviceId)")
-            var newMessage = try await apiService.addConversationMessage(
+            print("[DEBUG] sendMessage - Sending via buffered endpoint, conversationId=\(conversation.id), deviceId=\(deviceId)")
+
+            // Use MessageSendingService for delivery tracking
+            let localId = try await MessageSendingService.shared.sendMessage(
                 conversationId: conversation.id,
                 encryptedMessage: encryptedMessage,
+                messageType: .text,
                 deviceId: deviceId
             )
 
-            print("[DEBUG] sendMessage - Message sent successfully, id=\(newMessage.id)")
+            print("[DEBUG] sendMessage - Message queued locally with id=\(localId)")
 
-            // Store the encryption key so we can decrypt our own message
+            // Create local message for immediate UI display
+            var newMessage = ConversationMessage(
+                id: localId,
+                ciphertext: encryptedMessage.ciphertext,
+                nonce: encryptedMessage.nonce,
+                tag: encryptedMessage.tag,
+                createdAt: Date(),
+                consumed: false,
+                conversationId: conversation.id,
+                expiresAt: conversation.expiresAt,
+                readAt: nil,
+                senderDeviceId: deviceId,
+                messageType: .text,
+                fileName: nil,
+                fileSize: nil,
+                fileMimeType: nil,
+                fileUrl: nil
+            )
+
+            // Store the encryption key and decrypted content for display
             newMessage.encryptionKey = keyString
             newMessage.decryptedContent = trimmedMessage
+            newMessage.syncStatus = .pending
 
             messages.append(newMessage)
-
             messageText = ""
             // Keep keyboard focused instead of dismissing it
             messageFieldFocused = true
@@ -713,20 +735,8 @@ struct ConversationMessageRow: View {
                 }
 
                 if isSentByCurrentDevice {
-                    if message.readAt != nil {
-                        HStack(spacing: -2) {
-                            Text("✓")
-                                .font(.caption2)
-                                .foregroundColor(.white.opacity(0.8))
-                            Text("✓")
-                                .font(.caption2)
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-                    } else {
-                        Text("✓")
-                            .font(.caption2)
-                            .foregroundColor(.white.opacity(0.6))
-                    }
+                    // WhatsApp-style delivery status indicators
+                    statusIndicator(for: message.syncStatus)
                 }
             }
             .padding(.horizontal, 12)
@@ -926,6 +936,53 @@ struct ConversationMessageRow: View {
                let rootVC = window.rootViewController {
                 rootVC.present(activityVC, animated: true)
             }
+        }
+    }
+
+    // MARK: - Status Indicator
+
+    @ViewBuilder
+    private func statusIndicator(for status: SyncStatus) -> some View {
+        switch status {
+        case .pending:
+            // Clock icon - message is queued locally, not yet sent
+            Image(systemName: "clock")
+                .font(.caption2)
+                .foregroundColor(.white.opacity(0.5))
+
+        case .sent:
+            // Single checkmark - sent to server (in Redis queue)
+            Image(systemName: "checkmark")
+                .font(.caption2)
+                .foregroundColor(.white.opacity(0.7))
+
+        case .delivered:
+            // Double checkmark - delivered to PostgreSQL
+            HStack(spacing: -2) {
+                Image(systemName: "checkmark")
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.8))
+                Image(systemName: "checkmark")
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.8))
+            }
+
+        case .read:
+            // Blue double checkmark - message has been read
+            HStack(spacing: -2) {
+                Image(systemName: "checkmark")
+                    .font(.caption2)
+                    .foregroundColor(.blue)
+                Image(systemName: "checkmark")
+                    .font(.caption2)
+                    .foregroundColor(.blue)
+            }
+
+        case .failed:
+            // Warning icon - message failed to send
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.caption2)
+                .foregroundColor(.red.opacity(0.8))
         }
     }
 

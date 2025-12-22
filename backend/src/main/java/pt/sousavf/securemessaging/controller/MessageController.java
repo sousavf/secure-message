@@ -1,16 +1,21 @@
 package pt.sousavf.securemessaging.controller;
 
+import pt.sousavf.securemessaging.dto.BufferedMessage;
 import pt.sousavf.securemessaging.dto.CreateMessageRequest;
+import pt.sousavf.securemessaging.dto.MessageBufferedResponse;
 import pt.sousavf.securemessaging.dto.MessageResponse;
 import pt.sousavf.securemessaging.dto.MessagePageResponse;
+import pt.sousavf.securemessaging.service.MessageQueueService;
 import pt.sousavf.securemessaging.service.MessageService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -25,6 +30,9 @@ public class MessageController {
     private static final Logger logger = LoggerFactory.getLogger(MessageController.class);
 
     private final MessageService messageService;
+
+    @Autowired
+    private MessageQueueService messageQueueService;
 
     public MessageController(MessageService messageService) {
         this.messageService = messageService;
@@ -126,6 +134,61 @@ public class MessageController {
             logger.error("Error creating conversation message", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorMessage("Error creating message"));
+        }
+    }
+
+    /**
+     * Send message to Redis queue for async processing
+     * Returns immediately with server-assigned ID
+     * Use this endpoint for WhatsApp-style delivery status tracking
+     */
+    @PostMapping("/api/conversations/{conversationId}/messages/buffered")
+    public ResponseEntity<?> sendMessageBuffered(
+            @PathVariable UUID conversationId,
+            @RequestHeader("X-Device-ID") String deviceId,
+            @Valid @RequestBody CreateMessageRequest request) {
+        try {
+            logger.info("Received buffered message request for conversation: {} from device: {}", conversationId, deviceId);
+
+            // Generate server ID immediately
+            UUID serverId = UUID.randomUUID();
+
+            // Create buffered message
+            BufferedMessage buffered = new BufferedMessage(
+                serverId,
+                conversationId,
+                deviceId,
+                request.getCiphertext(),
+                request.getNonce(),
+                request.getTag(),
+                request.getMessageType(),
+                Instant.now()
+            );
+
+            // Set file metadata if present
+            if (request.getFileName() != null) {
+                buffered.setFileName(request.getFileName());
+                buffered.setFileSize(request.getFileSize());
+                buffered.setFileMimeType(request.getFileMimeType());
+            }
+
+            // Queue in Redis (fast, < 10ms)
+            messageQueueService.queueMessage(buffered);
+
+            // Return immediately
+            MessageBufferedResponse response = new MessageBufferedResponse(
+                serverId,
+                "QUEUED_FOR_PROCESSING",
+                buffered.getQueuedAt()
+            );
+
+            logger.info("Message queued successfully: {}", serverId);
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+
+        } catch (Exception e) {
+            logger.error("Failed to queue message for conversation: {}", conversationId, e);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorMessage("Failed to queue message: " + e.getMessage()));
         }
     }
 

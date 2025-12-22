@@ -19,6 +19,15 @@ public class CreateMessageRequest {
 
     private Message.MessageType messageType = Message.MessageType.TEXT;
 
+    // File metadata (for FILE/IMAGE messages)
+    @Size(max = 255, message = "File name too large")
+    private String fileName;
+
+    private Integer fileSize;
+
+    @Size(max = 100, message = "MIME type too large")
+    private String fileMimeType;
+
     public CreateMessageRequest() {}
 
     public CreateMessageRequest(String ciphertext, String nonce, String tag) {
@@ -57,5 +66,29 @@ public class CreateMessageRequest {
 
     public void setMessageType(Message.MessageType messageType) {
         this.messageType = messageType;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public Integer getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(Integer fileSize) {
+        this.fileSize = fileSize;
+    }
+
+    public String getFileMimeType() {
+        return fileMimeType;
+    }
+
+    public void setFileMimeType(String fileMimeType) {
+        this.fileMimeType = fileMimeType;
     }
 }

@@ -19,11 +19,27 @@ enum MessageType: String, Codable {
     case file = "FILE"
 }
 
+// MARK: - Message Delivery Status
+
+enum SyncStatus: String, Codable {
+    case pending    // Created locally, not yet sent to server
+    case sent       // Sent to server and queued in Redis (⏰)
+    case delivered  // Processed and saved to PostgreSQL (✓)
+    case read       // Message has been read by recipient (✓✓ blue)
+    case failed     // Failed to send after retries
+}
+
 struct CreateMessageRequest: Codable {
     let ciphertext: String
     let nonce: String
     let tag: String
     var messageType: MessageType = .text
+}
+
+struct MessageBufferedResponse: Codable {
+    let serverId: UUID
+    let status: String
+    let queuedAt: Date
 }
 
 struct MessageResponse: Codable {
@@ -176,6 +192,12 @@ struct ConversationMessage: Identifiable, Codable {
     var encryptionKey: String? = nil
     var decryptedContent: String? = nil
     var downloadedFileData: Data? = nil  // Decrypted file data cached locally
+
+    // Delivery tracking (local only, not transmitted)
+    var serverId: UUID? = nil           // Server-assigned ID for tracking delivery
+    var syncStatus: SyncStatus = .pending
+    var sentAt: Date? = nil             // When message was sent to server
+    var deliveredAt: Date? = nil        // When message was saved to PostgreSQL
 
     enum CodingKeys: String, CodingKey {
         case id, ciphertext, nonce, tag, createdAt, consumed, conversationId, expiresAt, readAt, senderDeviceId, messageType
