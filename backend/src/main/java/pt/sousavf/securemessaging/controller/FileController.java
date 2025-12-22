@@ -74,7 +74,13 @@ public class FileController {
             Message fileMessage = new Message();
             fileMessage.setConversationId(conversationId);
             fileMessage.setSenderDeviceId(deviceId);
-            fileMessage.setMessageType(Message.MessageType.FILE);
+
+            // Determine message type based on MIME type
+            Message.MessageType messageType = Message.MessageType.FILE;
+            if (request.getMimeType() != null && request.getMimeType().startsWith("image/")) {
+                messageType = Message.MessageType.IMAGE;
+            }
+            fileMessage.setMessageType(messageType);
 
             // Store minimal ciphertext placeholder (actual file is in Redis/storage)
             fileMessage.setCiphertext("FILE:" + fileId.toString());
@@ -122,8 +128,8 @@ public class FileController {
 
             // Find message by file ID (stored in ciphertext as "FILE:{fileId}")
             Message message = messageRepository.findAll().stream()
-                .filter(m -> m.getMessageType() == Message.MessageType.FILE)
-                .filter(m -> m.getCiphertext().contains(fileId.toString()))
+                .filter(m -> m.getMessageType() == Message.MessageType.FILE || m.getMessageType() == Message.MessageType.IMAGE)
+                .filter(m -> m.getCiphertext() != null && m.getCiphertext().contains(fileId.toString()))
                 .findFirst()
                 .orElse(null);
 

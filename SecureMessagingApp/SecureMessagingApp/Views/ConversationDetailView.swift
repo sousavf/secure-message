@@ -872,31 +872,32 @@ struct ConversationMessageRow: View {
             return
         }
 
+        guard let nonce = message.nonce, let tag = message.tag else {
+            downloadError = "Missing encryption metadata"
+            return
+        }
+
         isDownloading = true
         downloadError = nil
 
         do {
             print("[DEBUG] ConversationMessageRow - Downloading file from: \(fileUrl)")
 
-            // Download encrypted file
-            let encryptedData = try await APIService.shared.downloadFile(url: fileUrl)
+            // Download encrypted file (binary data)
+            let encryptedBinaryData = try await APIService.shared.downloadFile(url: fileUrl)
 
-            print("[DEBUG] ConversationMessageRow - Downloaded \(encryptedData.count) bytes, decrypting...")
+            print("[DEBUG] ConversationMessageRow - Downloaded \(encryptedBinaryData.count) bytes, decrypting...")
 
-            // Decrypt file
+            // Convert binary data to base64 string for decryption
+            let ciphertextBase64 = encryptedBinaryData.base64EncodedString()
+
+            // Decrypt file using nonce and tag from message metadata
             let key = try CryptoManager.keyFromBase64String(keyString)
+            let encryptedFile = EncryptedFile(ciphertext: ciphertextBase64, nonce: nonce, tag: tag)
+            let decryptedData = try FileService.shared.decryptFile(encryptedFile, key: key)
 
-            // The encrypted file is stored as base64-encoded ciphertext in the message
-            // But when downloaded, it's raw binary data
-            if let ciphertext = message.ciphertext, let nonce = message.nonce, let tag = message.tag {
-                let encryptedFile = EncryptedFile(ciphertext: ciphertext, nonce: nonce, tag: tag)
-                let decryptedData = try FileService.shared.decryptFile(encryptedFile, key: key)
-
-                downloadedFileData = decryptedData
-                print("[DEBUG] ConversationMessageRow - File decrypted successfully: \(decryptedData.count) bytes")
-            } else {
-                downloadError = "Missing encryption data"
-            }
+            downloadedFileData = decryptedData
+            print("[DEBUG] ConversationMessageRow - File decrypted successfully: \(decryptedData.count) bytes")
 
             isDownloading = false
         } catch {
